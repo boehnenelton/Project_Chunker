@@ -1,0 +1,215 @@
+/*
+  File Name:     becss-chunker.css
+  Relative Path: Web/static/becss/becss-chunker.css
+  Description:   Project Chunker web UI components in BECSS naming (becss-chunker-*), layered after becss-core.css.
+                 Palette: white/black with #DE2626 accent; light and dark via prefers-color-scheme.
+  Author:        Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
+*/
+@layer components.chunker {
+  :root { --becss-ok: oklch(55% 0.14 150); --fill: oklch(95% 0 0); --fill-strong: oklch(88% 0 0); }
+  :root[data-theme="dark"] { --bg-page: oklch(12% 0 0); --bg-alt: oklch(18% 0 0); --text-main: oklch(96% 0 0); --text-muted: oklch(72% 0 0);
+      --fill: oklch(22% 0 0); --fill-strong: oklch(32% 0 0); --border: oklch(30% 0 0); --border-muted: oklch(24% 0 0); --primary-muted: oklch(65% 0.2 25 / 0.2);
+      --becss-ok: oklch(75% 0.14 150); color-scheme: dark; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg-page: oklch(12% 0 0); --bg-alt: oklch(18% 0 0); --text-main: oklch(96% 0 0); --text-muted: oklch(72% 0 0);
+      --fill: oklch(22% 0 0); --fill-strong: oklch(32% 0 0); --border: oklch(30% 0 0); --border-muted: oklch(24% 0 0); --primary-muted: oklch(65% 0.2 25 / 0.2);
+      --becss-ok: oklch(75% 0.14 150); color-scheme: dark; }
+  }
+  body { background: var(--bg-page); color: var(--text-main); }
+  .becss-chunker { min-height: 100vh; }
+  .becss-chunker-header { position: sticky; top: 0; z-index: 800; gap: 0; }
+  .becss-chunker-hamburger { background: none; border: 0; }
+  .becss-chunker-hamburger:focus-visible, .becss-chunker-btn:focus-visible, .becss-chunker-input:focus-visible,
+  .becss-chunker-switch input:focus-visible + .becss-chunker-switch__track,
+  .becss-chunker-radio input:focus-visible + .becss-chunker-radio__box,
+  .becss-chunker-check input:focus-visible + .becss-chunker-check__box { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .becss-chunker-container { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); transition: var(--transition); }
+  .becss-chunker-nav-hidden .becss-chunker-container { grid-template-columns: minmax(0, 1fr); }
+  .becss-chunker-nav-hidden .left-column { display: none; }
+  .mobile-sidebar { color: var(--text-main); }
+  .becss-sidebar__section-title { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .becss-chunker-nav__link { display: block; padding: 10px 12px; border-radius: var(--radius); color: var(--text-main);  }
+  .becss-chunker-nav__link:hover { background: var(--bg-alt); text-decoration: none; color: var(--primary); }
+  .becss-chunker-nav__link--active { background: var(--primary-muted); font-weight: 600; }
+  .global-docked-footer { background: var(--bg-page); color: var(--text-muted); }
+
+  .becss-chunker-badge { margin-left: auto; padding: 4px 12px; border-radius: 999px; font-size: .75rem; font-weight: 700; letter-spacing: .06em; background: color-mix(in oklch, currentColor 14%, transparent); }
+  .becss-chunker-badge--dry { color: var(--becss-ok); }
+  .becss-chunker-badge--live { color: var(--primary); background: var(--primary-muted); }
+
+  .becss-chunker-section { margin-bottom: 28px; scroll-margin-top: 80px; }
+  .becss-chunker-section__title { font-size: 1.05rem; margin: 0 0 10px; padding-bottom: 6px; display: inline-block; }
+  .becss-chunker-subtitle { font-size: .95rem; margin: 18px 0 8px; }
+  .becss-chunker-muted { color: var(--text-muted); font-size: .88rem; }
+  .becss-chunker-steps { margin: 0; padding-left: 20px; line-height: 1.7; }
+
+  .becss-chunker-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .becss-chunker-stat { background: var(--bg-alt); border: 1px solid transparent; border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; }
+  .becss-chunker-stat__value { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+  .becss-chunker-stat__label { font-size: .8rem; color: var(--text-muted); }
+
+  .becss-chunker-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid transparent; }
+  .becss-chunker-row:last-child { border-bottom: 0; }
+  .becss-chunker-row__info { flex: 1; min-width: 0; }
+  .becss-chunker-row__label { display: block; font-weight: 600; text-transform: capitalize; }
+  .becss-chunker-row__desc { display: block; font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+  .becss-chunker-row__hint { display: block; font-size: .8rem; color: var(--primary); margin-top: 2px; }
+  .becss-chunker-row__hint--ok { color: var(--becss-ok); }
+  .left-column .sidebar-bottom { flex: none; }
+  .becss-chunker-row--dim { opacity: .55; }
+
+  .becss-chunker-switch { position: relative; display: inline-block; width: 52px; height: 28px; flex: none; }
+  .becss-chunker-switch input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+  .becss-chunker-switch__track { position: absolute; inset: 0; background: var(--fill-strong); border-radius: 999px; transition: var(--transition); }
+  .becss-chunker-switch__track::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: var(--transition); box-shadow: var(--shadow-sm); }
+  .becss-chunker-switch input:checked + .becss-chunker-switch__track { background: var(--primary); }
+  .becss-chunker-switch input:checked + .becss-chunker-switch__track::before { transform: translateX(24px); }
+  .becss-chunker-switch input:disabled { cursor: not-allowed; }
+
+  .becss-chunker-radios { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .becss-chunker-radios--inline { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .becss-chunker-radio { position: relative; display: block; cursor: pointer; }
+  .becss-chunker-radio input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .becss-chunker-radio__box { display: block; height: 100%; padding: 12px 14px 12px 40px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); position: relative; transition: var(--transition); }
+  .becss-chunker-radio__box::before { content: ""; position: absolute; left: 12px; top: 14px; width: 20px; height: 20px; background: var(--fill-strong); border-radius: 50%; }
+  .becss-chunker-radio__box::after { content: ""; position: absolute; left: 19px; top: 21px; width: 6px; height: 6px; border-radius: 50%; background: #fff; transform: scale(0); transition: var(--transition); }
+  .becss-chunker-radio input:checked + .becss-chunker-radio__box { background: var(--primary-muted); }
+  .becss-chunker-radio input:checked + .becss-chunker-radio__box::before { background: var(--primary); }
+  .becss-chunker-radio input:checked + .becss-chunker-radio__box::after { transform: scale(1); }
+  .becss-chunker-radio input:disabled + .becss-chunker-radio__box { opacity: .5; cursor: not-allowed; }
+  .becss-chunker-radio__title { display: block; font-weight: 600; text-transform: capitalize; }
+  .becss-chunker-radio__desc { display: block; font-size: .82rem; color: var(--text-muted); margin-top: 2px; }
+
+  .becss-chunker-check { position: relative; display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; cursor: pointer; }
+  .becss-chunker-check input { position: absolute; opacity: 0; width: 22px; height: 22px; margin: 0; cursor: pointer; z-index: 1; top: 8px; left: 0; }
+  .becss-chunker-check__box { flex: none; width: 22px; height: 22px; border-radius: 4px; position: relative; background: var(--fill-strong); transition: var(--transition); }
+  .becss-chunker-check input:checked + .becss-chunker-check__box { background: var(--primary); }
+  .becss-chunker-check input:checked + .becss-chunker-check__box::after { content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .becss-chunker-check--danger { color: var(--primary); font-weight: 600; }
+  .becss-chunker-filters { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; }
+
+  .becss-chunker-field { margin: 14px 0; }
+  .becss-chunker-field__label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .becss-chunker-field__line { display: flex; gap: 8px; }
+  .becss-chunker-input { flex: 1; min-width: 0; padding: 9px 10px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); color: var(--text-main); font: inherit; font-family: var(--font-mono); }
+  .becss-chunker-input--short { max-width: 140px; flex: none; }
+  .becss-chunker-input:disabled { opacity: .5; }
+  .becss-chunker-btn { padding: 9px 16px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); color: var(--text-main); font: inherit; font-weight: 600; cursor: pointer; transition: var(--transition); }
+  .becss-chunker-btn:hover:not(:disabled) { background: var(--primary-muted); color: var(--primary); }
+  .becss-chunker-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .becss-chunker-btn--primary { background: var(--primary); color: #fff; }
+  .becss-chunker-btn--primary:hover:not(:disabled) { color: #fff; filter: brightness(.92); }
+  .becss-chunker-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+
+  .becss-chunker-callout { margin-top: 12px; padding: 10px 12px; background: color-mix(in oklch, var(--becss-ok) 14%, transparent); border-radius: var(--radius); font-size: .9rem; }
+  .becss-chunker-callout--live, .becss-chunker-callout--bad { background: var(--primary-muted); }
+  .becss-chunker-callout[hidden] { display: none; }
+
+  .becss-chunker-browser { margin-top: 10px; background: var(--bg-alt); border-radius: var(--radius); overflow: hidden; }
+  .becss-chunker-browser__bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: var(--bg-alt); }
+  .becss-chunker-browser__bar code { flex: 1; min-width: 120px; overflow-wrap: anywhere; font-size: .8rem; }
+  .becss-chunker-browser__list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow: auto; }
+  .becss-chunker-browser__list li { padding: 9px 12px; cursor: pointer; border-top: 1px solid transparent; }
+  .becss-chunker-browser__list li:hover { background: var(--primary-muted); }
+  .becss-chunker-browser[hidden] { display: none; }
+
+  .becss-chunker-tablewrap { overflow-x: auto; border: 1px solid transparent; border-radius: var(--radius); }
+  .becss-chunker-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .becss-chunker-table th { text-align: left; background: var(--bg-alt); padding: 8px 10px; white-space: nowrap; border-bottom: 2px solid transparent; }
+  .becss-chunker-table td { padding: 8px 10px; border-top: 1px solid transparent; vertical-align: top; overflow-wrap: anywhere; }
+  .becss-chunker-pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: color-mix(in oklch, currentColor 14%, transparent); white-space: nowrap; }
+  .becss-chunker-pill--ok { color: var(--becss-ok); }
+  .becss-chunker-pill--bad { color: var(--primary); }
+  .becss-chunker-pill--muted { color: var(--text-muted); }
+
+  .becss-chunker-progress { height: 10px; background: var(--fill-strong); border-radius: 999px; overflow: hidden; }
+  .becss-chunker-progress__bar { height: 100%; width: 0; background: var(--primary); transition: width .3s ease; }
+
+  .becss-chunker-toast { position: fixed; left: 50%; bottom: 72px; transform: translate(-50%, 20px); background: var(--text-main); color: var(--bg-page); padding: 10px 18px; border-radius: 999px; opacity: 0; pointer-events: none; transition: var(--transition); z-index: 1200; max-width: 90vw; }
+  .becss-chunker-toast--show { opacity: 1; transform: translate(-50%, 0); }
+  .becss-chunker-toast--bad { background: var(--primary); color: #fff; }
+
+
+  /* ── additions for the unified app ── */
+  .becss-chunker-nav__group { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 4px 12px; }
+  .becss-chunker-nav__link--off { opacity: .45; pointer-events: none; }
+  .becss-chunker-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 2px solid transparent; margin-bottom: 16px; }
+  .becss-chunker-tab { padding: 8px 14px; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--text-main); font: inherit; font-weight: 600; cursor: pointer; margin-bottom: -2px; }
+  .becss-chunker-tab--active { background: var(--primary-muted); border-radius: var(--radius) var(--radius) 0 0; color: var(--primary); }
+  .becss-chunker-panel[hidden] { display: none; }
+  .becss-chunker-card { border: 1px solid transparent; border-radius: var(--radius); padding: 12px 14px; background: var(--bg-alt); margin-bottom: 10px; }
+  .becss-chunker-card__head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .becss-chunker-card__title { font-weight: 700; }
+  .becss-chunker-banner { padding: 12px 14px; border-radius: var(--radius); background: var(--primary-muted); margin: 12px 0; font-size: .92rem; }
+  .becss-chunker-banner[hidden] { display: none; }
+  .becss-chunker-banner--ok { background: color-mix(in oklch, var(--becss-ok) 14%, transparent); }
+  .becss-chunker-modal { position: fixed; inset: 0; z-index: 1300; background: oklch(0% 0 0 / .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .becss-chunker-modal[hidden] { display: none; }
+  .becss-chunker-modal__box { background: var(--bg-page); color: var(--text-main); border-radius: var(--radius); width: min(640px, 100%); max-height: 88vh; overflow: auto; padding: 16px; }
+  .becss-chunker-pre { background: var(--bg-alt); border: 1px solid transparent; border-radius: var(--radius); padding: 10px; overflow: auto; max-height: 360px; font-family: var(--font-mono); font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .becss-chunker-list { margin: 6px 0; padding: 0; list-style: none; max-height: 220px; overflow: auto; background: var(--bg-alt); border-radius: var(--radius); }
+  .becss-chunker-list li { padding: 5px 10px; border-top: 1px solid transparent; font-family: var(--font-mono); font-size: .8rem; overflow-wrap: anywhere; }
+  .becss-chunker-list li:first-child { border-top: 0; }
+  .becss-chunker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .becss-chunker-pill--link { cursor: pointer; }
+  .becss-chunker-row--clip { cursor: pointer; }
+  .becss-chunker-row--clip:hover td { background: var(--primary-muted); }
+  .becss-chunker-select { padding: 9px 10px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); color: var(--text-main); font: inherit; }
+  .becss-chunker-chip { display: inline-block; padding: 2px 10px; background: var(--primary-muted); border-radius: 999px; font-size: .78rem; color: var(--primary); }
+
+  .middle-column { padding-bottom: 72px; }
+  /* projects: collapsible project cards */
+  .becss-chunker-acc { border: 1px solid transparent; border-radius: var(--radius); background: var(--bg-alt); margin-bottom: 10px; overflow: hidden; }
+  .becss-chunker-acc__head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 14px; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+  .becss-chunker-acc__head:hover { background: var(--primary-muted); }
+  .becss-chunker-acc__head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+  .becss-chunker-acc__title { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+  .becss-chunker-acc__meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+  .becss-chunker-acc__chev { flex: none; width: 22px; text-align: center; font-weight: 700; font-size: 1.2rem; color: var(--primary); }
+  .becss-chunker-acc__body { padding: 4px 14px 16px; border-top: 1px solid transparent; }
+  .becss-chunker-acc__body[hidden] { display: none; }
+  .becss-chunker-input--area { display: block; width: 100%; min-height: 76px; resize: vertical; font-family: inherit; }
+  .becss-chunker-field__note { display: block; margin-top: 4px; font-size: .82rem; color: var(--text-muted); overflow-wrap: anywhere; }
+  .becss-chunker-row__desc { overflow-wrap: anywhere; }
+
+  @media (max-width: 768px) {
+    /* The desktop 2-column grid (sidebar + content) must not survive on a phone: the sidebar is a drawer there,
+       so content takes the full width. (This layer sits after the core's own phone rule and used to override it.) */
+    .becss-chunker-container, .becss-chunker-nav-hidden .becss-chunker-container { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 12px 14px 24px; }
+    .becss-chunker-container > .middle-column { grid-column: 1 / -1; width: 100%; min-width: 0; }
+    .becss-chunker-row { align-items: flex-start; flex-wrap: wrap; }
+    header.becss-chunker-header { padding: 10px 14px; }
+    /* touch targets and no iOS focus-zoom */
+    .becss-chunker-btn { min-height: 44px; }
+    .becss-chunker-input, .becss-chunker-select { min-height: 44px; font-size: 16px; }
+    .becss-chunker-check { min-height: 44px; align-items: center; }
+    .becss-chunker-check input { top: 50%; margin-top: -11px; }
+    .becss-chunker-filters { gap: 0 18px; }
+    .becss-chunker-radios, .becss-chunker-radios--inline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .becss-chunker-actions > .becss-chunker-btn { flex: 1 1 140px; }
+    .becss-chunker-tabs { flex-wrap: nowrap; overflow-x: auto; }
+    .becss-chunker-tab { white-space: nowrap; min-height: 44px; }
+    .becss-chunker-input--short { max-width: none; flex: 1; }
+    .becss-chunker-pre { max-height: 240px; }
+    .becss-chunker-acc__head { flex-wrap: wrap; }
+    .becss-chunker-acc__title { flex-basis: calc(100% - 40px); }
+    .becss-chunker-acc__meta { order: 3; flex-basis: 100%; justify-content: flex-start; }
+    .becss-chunker-acc__body { padding: 4px 12px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* V1.7.2 seamless look: no resting borders; surfaces are separated by tone. Focus rings stay for keyboard users. */
+  .becss-chunker-input:focus-visible, .becss-chunker-select:focus-visible, .becss-chunker-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 0; }
+  .becss-chunker-table tbody tr:nth-child(even) td { background: var(--bg-alt); }
+
+  /* V1.8.0 active project: a bar above every page title, a pinned/highlighted card on Projects */
+  .becss-chunker-active { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 12px; margin: 0 0 12px; border-radius: var(--radius); background: var(--primary-muted); font-size: .9rem; }
+  .becss-chunker-active--none { background: var(--bg-alt); color: var(--text-muted); }
+  .becss-chunker-active__label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+  .becss-chunker-active__name { font-size: 1rem; word-break: break-word; }
+  .becss-chunker-active__link { margin-left: auto; color: inherit; text-decoration: underline; }
+  .becss-chunker-active .becss-chunker-btn { padding: 4px 10px; min-height: 32px; }
+  .becss-chunker-acc__active { padding: 6px 12px 8px; }
+  .becss-chunker-acc--active > .becss-chunker-acc__head { box-shadow: inset 4px 0 0 var(--primary); }
+  .becss-chunker-acc--active { background: var(--primary-muted); }
+}

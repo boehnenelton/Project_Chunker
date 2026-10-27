@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Run</h1>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Phases</h2>
+  <div class="content-card">
+    <label class="becss-migrator-check"><input type="checkbox" id="phChunk" data-phase="chunk" checked><span class="becss-migrator-check__box"></span><span><strong>Start</strong> &mdash; chunk every valid zip (originals untouched)</span></label>
+    <label class="becss-migrator-check"><input type="checkbox" id="phVerify" data-phase="verify"><span class="becss-migrator-check__box"></span><span><strong>Verify</strong> &mdash; verify chunks, then <span id="dispositionWord">{{ cfg.radios['Original_Disposition'] }}</span> the original zips</span></label>
+    <div class="becss-migrator-callout" id="runMode">&hellip;</div>
+    <label class="becss-migrator-check becss-migrator-check--danger" id="confirmRow" hidden><input type="checkbox" id="confirmLive"><span class="becss-migrator-check__box"></span>I understand this run changes data and original zips may be removed.</label>
+    <div class="becss-migrator-actions">
+      <button class="becss-migrator-btn becss-migrator-btn--primary" type="button" id="runBtn">Run</button>
+      <button class="becss-migrator-btn" type="button" id="cancelBtn" disabled>Cancel</button>
+    </div>
+  </div>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Progress</h2>
+  <div class="becss-migrator-progress" aria-hidden="true"><div class="becss-migrator-progress__bar" id="bar"></div></div>
+  <p id="jobLine" class="becss-migrator-muted">Idle.</p>
+  <div class="becss-migrator-tablewrap"><table class="becss-migrator-table"><thead><tr><th>Phase</th><th>Zip</th><th>Outcome</th><th>Detail</th></tr></thead><tbody id="resultBody"><tr><td colspan="4">No results yet.</td></tr></tbody></table></div>
+  <p class="becss-migrator-muted" id="reportLine"></p>
+</section>
+{% endblock %}

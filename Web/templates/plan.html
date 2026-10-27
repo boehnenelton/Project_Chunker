@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Plan</h1>
+<p class="becss-migrator-muted">A read-only scan of the source for zip archives. Nothing is changed.</p>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Show</h2>
+  <div class="content-card becss-migrator-filters" id="planFilters">
+    <label class="becss-migrator-check"><input type="checkbox" data-show="ready" checked><span class="becss-migrator-check__box"></span>Ready to chunk</label>
+    <label class="becss-migrator-check"><input type="checkbox" data-show="done" checked><span class="becss-migrator-check__box"></span>Already chunked</label>
+    <label class="becss-migrator-check"><input type="checkbox" data-show="bad" checked><span class="becss-migrator-check__box"></span>Invalid / locked</label>
+    <button class="becss-migrator-btn" type="button" id="rescanBtn">Rescan</button>
+  </div>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title" id="planTitle">Zips</h2>
+  <div class="becss-migrator-tablewrap"><table class="becss-migrator-table"><thead><tr><th>Zip</th><th>Files</th><th>Size</th><th>State</th><th>Note</th></tr></thead><tbody id="planBody"><tr><td colspan="5">Scanning&hellip;</td></tr></tbody></table></div>
+</section>
+{% endblock %}

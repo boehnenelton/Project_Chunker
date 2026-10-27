@@ -1,0 +1,138 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "Config_Name": "chunker_filters",
+  "Records_Type": [
+    "ChunkerSetting"
+  ],
+  "Fields": [
+    {
+      "name": "setting_id",
+      "type": "string"
+    },
+    {
+      "name": "group",
+      "type": "string"
+    },
+    {
+      "name": "enabled",
+      "type": "boolean"
+    },
+    {
+      "name": "patterns",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "binary_enabled",
+      "switch",
+      true,
+      "",
+      "Store binary files (base64 + Is_Binary flag). Off: binary files are ignored and reported."
+    ],
+    [
+      "apply_to_zip",
+      "switch",
+      false,
+      "",
+      "Apply the filters below to zip intake and the migrator. Off: zips are captured in full so they can be deleted safely; on: filtered content is lost and the zip is kept."
+    ],
+    [
+      "git",
+      "dirs",
+      true,
+      ".git",
+      "Git repository data."
+    ],
+    [
+      "nodejs",
+      "dirs",
+      true,
+      "node_modules,bower_components,.npm,.yarn,.pnpm-store",
+      "Node.js dependency trees."
+    ],
+    [
+      "python_cache",
+      "dirs",
+      true,
+      "__pycache__,.pytest_cache,.mypy_cache,.ruff_cache,.tox,*.egg-info",
+      "Python caches and metadata."
+    ],
+    [
+      "virtualenv",
+      "dirs",
+      true,
+      ".venv,venv",
+      "Python virtual environments."
+    ],
+    [
+      "build_output",
+      "dirs",
+      true,
+      "dist,build,out,.next,.nuxt,.turbo,.parcel-cache,coverage",
+      "Generated build output."
+    ],
+    [
+      "chunk_output",
+      "dirs",
+      true,
+      ".mfdb_lock,project_snapshots,.chunker_stage_*",
+      "The chunker's own storage, locks and staging."
+    ],
+    [
+      "ide",
+      "dirs",
+      false,
+      ".idea,.vscode",
+      "Editor settings folders."
+    ],
+    [
+      "chunk_files",
+      "files",
+      true,
+      "*.chunk.bejson,*.chunked.bejson,*.mfdb132.bejson",
+      "Chunk files produced by chunking."
+    ],
+    [
+      "os_junk",
+      "files",
+      true,
+      ".DS_Store,Thumbs.db,desktop.ini",
+      "Operating-system metadata files."
+    ],
+    [
+      "temp_files",
+      "files",
+      true,
+      "*.tmp,*.swp,*.swo,*~,*.pyc,*.pyo",
+      "Temporary and compiled-bytecode files."
+    ],
+    [
+      "logs",
+      "files",
+      false,
+      "*.log",
+      "Log files."
+    ],
+    [
+      "lockfiles",
+      "files",
+      false,
+      "package-lock.json,yarn.lock,pnpm-lock.yaml",
+      "Dependency lockfiles (kept by default: they pin versions)."
+    ],
+    [
+      "git_meta",
+      "files",
+      false,
+      ".gitignore,.gitattributes,.gitmodules",
+      "Git configuration files that live in the working tree (kept by default)."
+    ]
+  ]
+}

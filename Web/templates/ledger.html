@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Ledger</h1>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Filter</h2>
+  <div class="content-card becss-migrator-radios becss-migrator-radios--inline" id="ledgerFilter">
+    {% for key, label in (('all','All'),('chunked','Chunked'),('verified','Verified'),('gone','Deleted / quarantined / kept'),('problem','Problems')) %}
+    <label class="becss-migrator-radio"><input type="radio" name="ledgerView" value="{{ key }}" {{ 'checked' if key == 'all' else '' }}><span class="becss-migrator-radio__box"><span class="becss-migrator-radio__title">{{ label }}</span></span></label>
+    {% endfor %}
+  </div>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title" id="ledgerTitle">Entries</h2>
+  <div class="becss-migrator-tablewrap"><table class="becss-migrator-table"><thead><tr><th>Zip</th><th>Project</th><th>Status</th><th>UUID</th><th>Updated</th><th>Note</th></tr></thead><tbody id="ledgerBody"><tr><td colspan="6">Loading&hellip;</td></tr></tbody></table></div>
+</section>
+{% endblock %}

@@ -1,0 +1,70 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "Config_Name": "web_config",
+  "Records_Type": [
+    "WebSetting"
+  ],
+  "Fields": [
+    {
+      "name": "setting_name",
+      "type": "string"
+    },
+    {
+      "name": "setting_value",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "port_start",
+      "5120",
+      "First port tried; the next free port up to +19 is used."
+    ],
+    [
+      "bind_host",
+      "127.0.0.1",
+      "Bind address. Anything other than 127.0.0.1 exposes the UI to the network."
+    ],
+    [
+      "open_browser",
+      "false",
+      "Open the default browser on start."
+    ],
+    [
+      "theme",
+      "dark",
+      "Colour theme."
+    ],
+    [
+      "max_file_mb",
+      "25",
+      "Default per-file size limit for Chunk (0 = no limit)."
+    ],
+    [
+      "log_level",
+      "INFO",
+      "Logging threshold."
+    ],
+    [
+      "storage_root",
+      "",
+      "Chunker storage root override (empty = default / PROJECT_CHUNKER_STORAGE_ROOT)."
+    ],
+    [
+      "picker_roots",
+      "",
+      "Extra folder-picker roots, comma-separated (placeholders like {INTERNAL_STORAGE} work)."
+    ],
+    [
+      "job_journal_size",
+      "200",
+      "Finished jobs kept in the journal."
+    ]
+  ]
+}

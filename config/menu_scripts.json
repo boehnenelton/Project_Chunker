@@ -1,0 +1,70 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "Config_Name": "menu_scripts",
+  "Exported_At": "2026-10-11T04:09:26Z",
+  "Paths_Relative_To": "project_root",
+  "Records_Type": [
+    "MenuScript"
+  ],
+  "Fields": [
+    {
+      "name": "script_id",
+      "type": "string"
+    },
+    {
+      "name": "kind",
+      "type": "string"
+    },
+    {
+      "name": "script_path",
+      "type": "string"
+    },
+    {
+      "name": "relative_to_menu",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "project_chunker",
+      "cli",
+      "CLI/project_chunker.py",
+      "../CLI/project_chunker.py",
+      "Project Chunker & Tracker CLI."
+    ],
+    [
+      "project_chunker_menu",
+      "menu",
+      "Menu/project_chunker_menu.py",
+      "project_chunker_menu.py",
+      "Menu wrapper for the Project Chunker CLI."
+    ],
+    [
+      "project_db_migrator",
+      "helper",
+      "Helper/project_db_migrator.py",
+      "../Helper/project_db_migrator.py",
+      "Automated Project DB migrator helper."
+    ],
+    [
+      "project_management_flask",
+      "web",
+      "Web/project_management_flask.py",
+      "../Web/project_management_flask.py",
+      "Project_Management: read-only Flask viewer for the chunker registry."
+    ],
+    [
+      "project_migrator_flask",
+      "web",
+      "Web/project_migrator_flask.py",
+      "../Web/project_migrator_flask.py",
+      "Flask UI for the Project DB Migrator (BECSS Switch Core styling): hamburger side menu, section-based pages (overview, configuration, plan, run, ledger, about), toggle switches for boolean settings, radio boxes for choices, check boxes for phase selection and confirmation."
+    ]
+  ]
+}

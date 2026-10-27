@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Overview</h1>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">How it works</h2>
+  <div class="content-card">
+    <ol class="becss-migrator-steps">
+      <li><strong>Plan</strong> &mdash; scan the project DB for zip archives and check each one is a complete, valid zip.</li>
+      <li><strong>Start</strong> &mdash; chunk and track every valid zip. Original zips are never touched in this phase.</li>
+      <li><strong>Verify</strong> &mdash; confirm each chunk against its zip, byte for byte, then delete, quarantine or keep the original.</li>
+    </ol>
+    <p>Every run is a <strong>dry run</strong> until you switch it off in <a href="/config">Configuration</a>.</p>
+  </div>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Ledger status</h2>
+  <div class="becss-migrator-stats" id="stats">
+    <div class="becss-migrator-stat"><span class="becss-migrator-stat__value">{{ total }}</span><span class="becss-migrator-stat__label">tracked zips</span></div>
+    {% for status, count in tally|dictsort %}
+    <div class="becss-migrator-stat"><span class="becss-migrator-stat__value">{{ count }}</span><span class="becss-migrator-stat__label">{{ status }}</span></div>
+    {% endfor %}
+  </div>
+  <p class="becss-migrator-muted">Ledger: <code>{{ ledger_file }}</code></p>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Source</h2>
+  <div class="content-card" id="sourceCard">Resolving&hellip;</div>
+</section>
+{% endblock %}

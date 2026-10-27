@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="migrator-token" content="{{ token }}">
+<title>Project DB Migrator</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='becss/becss-core.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='becss/becss-migrator.css') }}">
+</head>
+<body class="becss-migrator" data-page="{{ page }}">
+<header class="becss-header becss-migrator-header">
+  <button class="hamburger becss-migrator-hamburger" id="navToggle" type="button" aria-label="Toggle menu" aria-controls="mobileSidebar" aria-expanded="false"><span></span><span></span><span></span></button>
+  <div class="header-logo">Project DB <span class="emphasis">Migrator</span></div>
+  <span class="becss-migrator-badge {{ 'becss-migrator-badge--dry' if cfg.dry_run else 'becss-migrator-badge--live' }}" id="modeBadge" data-dry="{{ 'true' if cfg.dry_run else 'false' }}">{{ 'DRY RUN' if cfg.dry_run else 'LIVE' }}</span>
+</header>
+
+{% macro nav() %}
+<nav class="becss-sidebar becss-sidebar-original" aria-label="Sections">
+  <div class="becss-sidebar__section-title">Sections</div>
+  <div class="sidebar-links becss-migrator-nav">
+    {% for key, label, href in sections %}
+    <a href="{{ href }}" class="becss-migrator-nav__link{{ ' becss-migrator-nav__link--active' if key == page else '' }}"{{ ' aria-current="page"' if key == page else '' }}>{{ label }}</a>
+    {% endfor %}
+  </div>
+</nav>
+{% endmacro %}
+
+<div class="container becss-migrator-container" id="shell">
+  <aside class="left-column" id="leftColumn">
+    <div class="sidebar-top">{{ nav() }}</div>
+    <div class="sidebar-bottom" id="sideStatus">Mode: {{ 'dry run (nothing changes)' if cfg.dry_run else 'LIVE (changes data)' }}</div>
+  </aside>
+  <main class="middle-column" id="main">
+    {% block body %}{% endblock %}
+    <div class="page-footer">Elton Boehnen &middot; boehnenelton2024@gmail.com &middot; boehnenelton2024.pages.dev &middot; <a href="https://github.com/boehnenelton">github.com/boehnenelton</a><br>Project Chunker V{{ version }}</div>
+  </main>
+</div>
+
+<div class="mobile-sidebar" id="mobileSidebar" aria-hidden="true">
+  <div class="sidebar-header"><span class="sidebar-title">Menu</span><span class="close-sidebar" id="navClose" role="button" tabindex="0" aria-label="Close menu">&times;</span></div>
+  <div class="sidebar-top">{{ nav() }}</div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="global-docked-footer"><span id="footerStatus">Ready</span> &middot; <a href="/about">About</a></div>
+<div class="becss-migrator-toast" id="toast" role="status" aria-live="polite"></div>
+<script src="{{ url_for('static', filename='migrator.js') }}"></script>
+</body>
+</html>

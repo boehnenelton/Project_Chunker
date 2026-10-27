@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% macro switch(key) %}
+<div class="becss-migrator-row" data-row="{{ key }}">
+  <div class="becss-migrator-row__info"><span class="becss-migrator-row__label">{{ key|replace('_', ' ') }}</span><span class="becss-migrator-row__desc">{{ bool_help[key] }}</span><span class="becss-migrator-row__hint" data-hint="{{ key }}"></span></div>
+  <label class="becss-migrator-switch"><input type="checkbox" role="switch" data-flag="{{ key }}" {{ 'checked' if cfg.flags[key] else '' }}><span class="becss-migrator-switch__track"></span></label>
+</div>
+{% endmacro %}
+{% macro radios(key, labels) %}
+<div class="becss-migrator-radios" role="radiogroup" aria-label="{{ key }}">
+  {% for opt in radio_options[key] %}
+  <label class="becss-migrator-radio"><input type="radio" name="{{ key }}" value="{{ opt }}" data-radio="{{ key }}" {{ 'checked' if cfg.radios[key] == opt else '' }}><span class="becss-migrator-radio__box"><span class="becss-migrator-radio__title">{{ opt|replace('_', ' ') }}</span><span class="becss-migrator-radio__desc">{{ labels[opt] }}</span></span></label>
+  {% endfor %}
+</div>
+{% endmacro %}
+{% block body %}
+<h1>Configuration</h1>
+<p class="becss-migrator-muted">Saved to <code>config/migrator_config.json</code> (BEJSON 104a). Changes apply to the next run.</p>
+<form id="configForm" autocomplete="off" onsubmit="return false">
+
+<section class="becss-migrator-section" id="sec-mode">
+  <h2 class="becss-migrator-section__title">Run mode</h2>
+  <div class="content-card">{{ switch('Dry_Run') }}
+    <div class="becss-migrator-callout becss-migrator-callout--live" id="liveCallout" hidden>Live mode is on: Start writes chunks and Verify changes original zips according to the choice below.</div>
+  </div>
+</section>
+
+<section class="becss-migrator-section" id="sec-source">
+  <h2 class="becss-migrator-section__title">Source</h2>
+  <div class="content-card">
+    {{ radios('Source_Mode', {'project_index_root': 'The PROJECT_INDEX_ROOT environment location (default {ADMIN_ROOT}/data/project_db).', 'custom': 'A folder you choose below.'}) }}
+    <div class="becss-migrator-field" id="customField">
+      <label class="becss-migrator-field__label" for="customRoot">Custom source folder</label>
+      <div class="becss-migrator-field__line">
+        <input class="becss-migrator-input" id="customRoot" type="text" data-text="Custom_Source_Root" value="{{ cfg.texts['Custom_Source_Root'] }}" placeholder="pick a folder with Browse">
+        <button class="becss-migrator-btn" type="button" id="browseBtn">Browse</button>
+      </div>
+      <span class="becss-migrator-row__desc">{{ text_help['Custom_Source_Root'] }}</span>
+      <div class="becss-migrator-browser" id="browser" hidden>
+        <div class="becss-migrator-browser__bar"><button class="becss-migrator-btn" type="button" id="browseUp">&#8593; Up</button><code id="browsePath"></code><button class="becss-migrator-btn becss-migrator-btn--primary" type="button" id="browseUse">Use this folder</button></div>
+        <ul class="becss-migrator-browser__list" id="browseList"></ul>
+      </div>
+    </div>
+    <div class="becss-migrator-callout" id="sourceResolved">Resolving&hellip;</div>
+  </div>
+</section>
+
+<section class="becss-migrator-section" id="sec-scan">
+  <h2 class="becss-migrator-section__title">Scanning</h2>
+  <div class="content-card">{{ switch('Recursive') }}{{ switch('Include_Hidden') }}{{ switch('Skip_Already_Chunked') }}</div>
+</section>
+
+<section class="becss-migrator-section" id="sec-chunk">
+  <h2 class="becss-migrator-section__title">Chunking</h2>
+  <div class="content-card">{{ switch('Binary_Enabled') }}
+    <div class="becss-migrator-field"><label class="becss-migrator-field__label" for="maxMb">Max file size (MB)</label>
+      <input class="becss-migrator-input becss-migrator-input--short" id="maxMb" type="number" min="0" step="1" data-text="Max_File_MB" value="{{ cfg.texts['Max_File_MB'] }}">
+      <span class="becss-migrator-row__desc">{{ text_help['Max_File_MB'] }}</span></div>
+    {{ switch('Stop_On_First_Error') }}
+  </div>
+</section>
+
+<section class="becss-migrator-section" id="sec-verify">
+  <h2 class="becss-migrator-section__title">Verification and original zips</h2>
+  <div class="content-card">{{ switch('Deep_Verify') }}
+    <h3 class="becss-migrator-subtitle">When a chunk verifies, the original zip is&hellip;</h3>
+    {{ radios('Original_Disposition', {'delete': 'Deleted. Its content now lives only in the chunk.', 'quarantine': 'Moved to migration/quarantine (SHA-256 checked) so you can delete it yourself.', 'keep': 'Left in place and marked kept.'}) }}
+    <div class="becss-migrator-callout becss-migrator-callout--live" id="deleteCallout" hidden>Delete is selected: after a live Verify run the original zips are gone. Zips that did not verify, or were only partly captured, are never removed.</div>
+  </div>
+</section>
+
+<section class="becss-migrator-section" id="sec-log">
+  <h2 class="becss-migrator-section__title">Logging</h2>
+  <div class="content-card">{{ radios('Log_Level', {'DEBUG': 'Everything.', 'INFO': 'Normal.', 'WARNING': 'Warnings and errors.', 'ERROR': 'Errors only.'}) }}</div>
+</section>
+
+<div class="becss-migrator-actions">
+  <button class="becss-migrator-btn becss-migrator-btn--primary" type="button" id="saveBtn">Save configuration</button>
+  <button class="becss-migrator-btn" type="button" id="revertBtn">Revert</button>
+  <span class="becss-migrator-muted" id="dirtyNote"></span>
+</div>
+</form>
+{% endblock %}

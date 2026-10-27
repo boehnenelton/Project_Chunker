@@ -1,0 +1,56 @@
+{
+  "Format": "BEJSON",
+  "Format_Version": "104a",
+  "Format_Creator": "Elton Boehnen",
+  "Dry_Run": true,
+  "Recursive": true,
+  "Include_Hidden": false,
+  "Skip_Already_Chunked": true,
+  "Binary_Enabled": true,
+  "Deep_Verify": true,
+  "Stop_On_First_Error": false,
+  "Records_Type": [
+    "MigratorSetting"
+  ],
+  "Fields": [
+    {
+      "name": "setting_name",
+      "type": "string"
+    },
+    {
+      "name": "setting_value",
+      "type": "string"
+    },
+    {
+      "name": "description",
+      "type": "string"
+    }
+  ],
+  "Values": [
+    [
+      "Source_Mode",
+      "project_index_root",
+      "Where to look for zips: the PROJECT_INDEX_ROOT environment location, or a custom folder. Options: project_index_root, custom."
+    ],
+    [
+      "Original_Disposition",
+      "keep",
+      "What the verify phase does with an original zip once its chunk is verified. Options: delete, quarantine, keep."
+    ],
+    [
+      "Log_Level",
+      "INFO",
+      "Logging threshold. Options: DEBUG, INFO, WARNING, ERROR."
+    ],
+    [
+      "Custom_Source_Root",
+      "",
+      "Used when Source_Mode is custom. Environment variables such as ${PROJECTS_ARCHIVE_ROOT} are resolved."
+    ],
+    [
+      "Max_File_MB",
+      "100",
+      "Files larger than this are not chunked (the zip is then kept as partial). 0 = no limit."
+    ]
+  ]
+}

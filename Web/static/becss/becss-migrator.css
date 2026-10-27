@@ -1,0 +1,140 @@
+/*
+  File Name:     becss-migrator.css
+  Relative Path: Web/static/becss/becss-migrator.css
+  Description:   Migrator UI components in BECSS naming (becss-migrator-*), layered after becss-core.css.
+                 Palette: white/black with #DE2626 accent; light and dark via prefers-color-scheme.
+  Author:        Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
+*/
+@layer components.migrator {
+  :root { --becss-ok: oklch(55% 0.14 150); --fill: oklch(95% 0 0); --fill-strong: oklch(88% 0 0); }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-page: oklch(12% 0 0); --bg-alt: oklch(18% 0 0); --text-main: oklch(96% 0 0); --text-muted: oklch(72% 0 0);
+      --fill: oklch(22% 0 0); --fill-strong: oklch(32% 0 0); --border: oklch(30% 0 0); --border-muted: oklch(24% 0 0); --primary-muted: oklch(65% 0.2 25 / 0.2);
+      --becss-ok: oklch(75% 0.14 150);
+    }
+  }
+  .becss-migrator { min-height: 100vh; }
+  .becss-migrator-header { position: sticky; top: 0; z-index: 800; gap: 0; }
+  .becss-migrator-hamburger { background: none; border: 0; }
+  .becss-migrator-hamburger:focus-visible, .becss-migrator-btn:focus-visible, .becss-migrator-input:focus-visible,
+  .becss-migrator-switch input:focus-visible + .becss-migrator-switch__track,
+  .becss-migrator-radio input:focus-visible + .becss-migrator-radio__box,
+  .becss-migrator-check input:focus-visible + .becss-migrator-check__box { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .becss-migrator-container { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); transition: var(--transition); }
+  .becss-migrator-nav-hidden .becss-migrator-container { grid-template-columns: minmax(0, 1fr); }
+  .becss-migrator-nav-hidden .left-column { display: none; }
+  .mobile-sidebar { color: var(--text-main); }
+  .becss-sidebar__section-title { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .becss-migrator-nav__link { display: block; padding: 10px 12px; border-radius: var(--radius); color: var(--text-main);  }
+  .becss-migrator-nav__link:hover { background: var(--bg-alt); text-decoration: none; color: var(--primary); }
+  .becss-migrator-nav__link--active { background: var(--primary-muted); font-weight: 600; }
+  .global-docked-footer { background: var(--bg-page); color: var(--text-muted); }
+
+  .becss-migrator-badge { margin-left: auto; padding: 4px 12px; border-radius: 999px; font-size: .75rem; font-weight: 700; letter-spacing: .06em; background: color-mix(in oklch, currentColor 14%, transparent); }
+  .becss-migrator-badge--dry { color: var(--becss-ok); }
+  .becss-migrator-badge--live { color: var(--primary); background: var(--primary-muted); }
+
+  .becss-migrator-section { margin-bottom: 28px; scroll-margin-top: 80px; }
+  .becss-migrator-section__title { font-size: 1.05rem; margin: 0 0 10px; padding-bottom: 6px; display: inline-block; }
+  .becss-migrator-subtitle { font-size: .95rem; margin: 18px 0 8px; }
+  .becss-migrator-muted { color: var(--text-muted); font-size: .88rem; }
+  .becss-migrator-steps { margin: 0; padding-left: 20px; line-height: 1.7; }
+
+  .becss-migrator-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .becss-migrator-stat { background: var(--bg-alt); border: 1px solid transparent; border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; }
+  .becss-migrator-stat__value { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+  .becss-migrator-stat__label { font-size: .8rem; color: var(--text-muted); }
+
+  .becss-migrator-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid transparent; }
+  .becss-migrator-row:last-child { border-bottom: 0; }
+  .becss-migrator-row__info { flex: 1; min-width: 0; }
+  .becss-migrator-row__label { display: block; font-weight: 600; text-transform: capitalize; }
+  .becss-migrator-row__desc { display: block; font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+  .becss-migrator-row__hint { display: block; font-size: .8rem; color: var(--primary); margin-top: 2px; }
+  .becss-migrator-row__hint--ok { color: var(--becss-ok); }
+  .left-column .sidebar-bottom { flex: none; }
+  .becss-migrator-row--dim { opacity: .55; }
+
+  .becss-migrator-switch { position: relative; display: inline-block; width: 52px; height: 28px; flex: none; }
+  .becss-migrator-switch input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; z-index: 1; }
+  .becss-migrator-switch__track { position: absolute; inset: 0; background: var(--fill-strong); border-radius: 999px; transition: var(--transition); }
+  .becss-migrator-switch__track::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: var(--transition); box-shadow: var(--shadow-sm); }
+  .becss-migrator-switch input:checked + .becss-migrator-switch__track { background: var(--primary); }
+  .becss-migrator-switch input:checked + .becss-migrator-switch__track::before { transform: translateX(24px); }
+  .becss-migrator-switch input:disabled { cursor: not-allowed; }
+
+  .becss-migrator-radios { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .becss-migrator-radios--inline { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .becss-migrator-radio { position: relative; display: block; cursor: pointer; }
+  .becss-migrator-radio input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .becss-migrator-radio__box { display: block; height: 100%; padding: 12px 14px 12px 40px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); position: relative; transition: var(--transition); }
+  .becss-migrator-radio__box::before { content: ""; position: absolute; left: 12px; top: 14px; width: 20px; height: 20px; background: var(--fill-strong); border-radius: 50%; }
+  .becss-migrator-radio__box::after { content: ""; position: absolute; left: 19px; top: 21px; width: 6px; height: 6px; border-radius: 50%; background: #fff; transform: scale(0); transition: var(--transition); }
+  .becss-migrator-radio input:checked + .becss-migrator-radio__box { background: var(--primary-muted); }
+  .becss-migrator-radio input:checked + .becss-migrator-radio__box::before { background: var(--primary); }
+  .becss-migrator-radio input:checked + .becss-migrator-radio__box::after { transform: scale(1); }
+  .becss-migrator-radio input:disabled + .becss-migrator-radio__box { opacity: .5; cursor: not-allowed; }
+  .becss-migrator-radio__title { display: block; font-weight: 600; text-transform: capitalize; }
+  .becss-migrator-radio__desc { display: block; font-size: .82rem; color: var(--text-muted); margin-top: 2px; }
+
+  .becss-migrator-check { position: relative; display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; cursor: pointer; }
+  .becss-migrator-check input { position: absolute; opacity: 0; width: 22px; height: 22px; margin: 0; cursor: pointer; z-index: 1; top: 8px; left: 0; }
+  .becss-migrator-check__box { flex: none; width: 22px; height: 22px; border-radius: 4px; position: relative; background: var(--fill-strong); transition: var(--transition); }
+  .becss-migrator-check input:checked + .becss-migrator-check__box { background: var(--primary); }
+  .becss-migrator-check input:checked + .becss-migrator-check__box::after { content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .becss-migrator-check--danger { color: var(--primary); font-weight: 600; }
+  .becss-migrator-filters { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; }
+
+  .becss-migrator-field { margin: 14px 0; }
+  .becss-migrator-field__label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .becss-migrator-field__line { display: flex; gap: 8px; }
+  .becss-migrator-input { flex: 1; min-width: 0; padding: 9px 10px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); color: var(--text-main); font: inherit; font-family: var(--font-mono); }
+  .becss-migrator-input--short { max-width: 140px; flex: none; }
+  .becss-migrator-input:disabled { opacity: .5; }
+  .becss-migrator-btn { padding: 9px 16px; border: 2px solid transparent; border-radius: var(--radius); background: var(--fill); color: var(--text-main); font: inherit; font-weight: 600; cursor: pointer; transition: var(--transition); }
+  .becss-migrator-btn:hover:not(:disabled) { background: var(--primary-muted); color: var(--primary); }
+  .becss-migrator-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .becss-migrator-btn--primary { background: var(--primary); color: #fff; }
+  .becss-migrator-btn--primary:hover:not(:disabled) { color: #fff; filter: brightness(.92); }
+  .becss-migrator-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+
+  .becss-migrator-callout { margin-top: 12px; padding: 10px 12px; background: color-mix(in oklch, var(--becss-ok) 14%, transparent); border-radius: var(--radius); font-size: .9rem; }
+  .becss-migrator-callout--live, .becss-migrator-callout--bad { background: var(--primary-muted); }
+  .becss-migrator-callout[hidden] { display: none; }
+
+  .becss-migrator-browser { margin-top: 10px; background: var(--bg-alt); border-radius: var(--radius); overflow: hidden; }
+  .becss-migrator-browser__bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: var(--bg-alt); }
+  .becss-migrator-browser__bar code { flex: 1; min-width: 120px; overflow-wrap: anywhere; font-size: .8rem; }
+  .becss-migrator-browser__list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow: auto; }
+  .becss-migrator-browser__list li { padding: 9px 12px; cursor: pointer; border-top: 1px solid transparent; }
+  .becss-migrator-browser__list li:hover { background: var(--primary-muted); }
+  .becss-migrator-browser[hidden] { display: none; }
+
+  .becss-migrator-tablewrap { overflow-x: auto; border: 1px solid transparent; border-radius: var(--radius); }
+  .becss-migrator-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .becss-migrator-table th { text-align: left; background: var(--bg-alt); padding: 8px 10px; white-space: nowrap; border-bottom: 2px solid transparent; }
+  .becss-migrator-table td { padding: 8px 10px; border-top: 1px solid transparent; vertical-align: top; overflow-wrap: anywhere; }
+  .becss-migrator-pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: color-mix(in oklch, currentColor 14%, transparent); white-space: nowrap; }
+  .becss-migrator-pill--ok { color: var(--becss-ok); }
+  .becss-migrator-pill--bad { color: var(--primary); }
+  .becss-migrator-pill--muted { color: var(--text-muted); }
+
+  .becss-migrator-progress { height: 10px; background: var(--fill-strong); border-radius: 999px; overflow: hidden; }
+  .becss-migrator-progress__bar { height: 100%; width: 0; background: var(--primary); transition: width .3s ease; }
+
+  .becss-migrator-toast { position: fixed; left: 50%; bottom: 72px; transform: translate(-50%, 20px); background: var(--text-main); color: var(--bg-page); padding: 10px 18px; border-radius: 999px; opacity: 0; pointer-events: none; transition: var(--transition); z-index: 1200; max-width: 90vw; }
+  .becss-migrator-toast--show { opacity: 1; transform: translate(-50%, 0); }
+  .becss-migrator-toast--bad { background: var(--primary); color: #fff; }
+
+  @media (max-width: 768px) {
+    .becss-migrator-container { padding: 12px 16px 24px; }
+    .becss-migrator-row { align-items: flex-start; }
+    header.becss-migrator-header { padding: 10px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* V1.7.2 seamless look: no resting borders; surfaces are separated by tone. Focus rings stay for keyboard users. */
+  .becss-migrator-input:focus-visible, .becss-migrator-select:focus-visible, .becss-migrator-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 0; }
+  .becss-migrator-table tbody tr:nth-child(even) td { background: var(--bg-alt); }
+}

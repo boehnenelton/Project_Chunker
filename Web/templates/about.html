@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>About</h1>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Safety model</h2>
+  <div class="content-card"><ul class="becss-migrator-steps">
+    <li>Dry run is the default; the first run only exports the config and a report.</li>
+    <li>A zip is chunked only if it passes a full CRC test, has no unsafe paths, symlinks or encryption, and extracts completely into a staging folder.</li>
+    <li>Start never changes a zip. Verify re-hashes the zip, checks the registry and snapshot, and (Deep verify) compares every file byte for byte.</li>
+    <li>A zip is deleted or quarantined only after it verifies and only on a live run. Partly captured zips are never removed.</li>
+    <li>Everything is recorded in the ledger; reports are written under <code>migration/reports</code>.</li>
+  </ul></div>
+</section>
+<section class="becss-migrator-section">
+  <h2 class="becss-migrator-section__title">Credits</h2>
+  <div class="content-card">Elton Boehnen &middot; boehnenelton2024@gmail.com &middot; boehnenelton2024.pages.dev &middot; <a href="https://github.com/boehnenelton">github.com/boehnenelton</a><br>Styling: BECSS Switch Core. Version {{ version }}.</div>
+</section>
+{% endblock %}

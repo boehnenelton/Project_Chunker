@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Developer tracking & dev files
+dev/
+
+# Runtime data, sessions & logs
+*.log
+*.pid
+data/*.log
+data/*.tmp
+data/web_exports/
+data/active_project.json
+data/web_jobs.bejson
+
+# Local runtime storage & backups
+storage/
+backups/
+
+# Secrets, environment & credentials
+.env
+*.env
+.env.*
+*secret*
+*credential*
+*token*
+*.pem
+*.key
+
+# OS & Editor artifacts
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
