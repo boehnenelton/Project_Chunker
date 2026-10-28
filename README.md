@@ -122,6 +122,17 @@ python3 CLI/project_chunker.py --set-version 2.1.0 5d46e31a
 python3 CLI/project_chunker.py --set-pkg 115 5d46e31a
 ```
 
+### 6. Interactive Zip Intake & Project Name Selection (`--prompt-name`)
+When converting `.zip` archives into Project Chunker, use `--prompt-name` (`-i`) to inspect detected identities and select or customize the project name for each zip:
+
+```bash
+# Convert a zip archive with interactive project name prompt
+python3 CLI/project_chunker.py /path/to/archive.zip --prompt-name
+
+# Run multi-zip database migration with project name prompting on each archive
+python3 Helper/project_db_migrator.py --prompt-name
+```
+
 ---
 
 ## Visual Interface Tour

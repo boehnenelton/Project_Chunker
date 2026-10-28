@@ -57,8 +57,9 @@ COMMANDS = {
     "versions": ("List versions of a project", ["--versions"], False),
     "list": ("List registry", ["--list"], False),
     "verify": ("Verify storage", ["--verify"], False),
+    "intake-zip": ("Intake / convert a .zip archive (prompt for project name)", ["--prompt-name"], True),
 }
-MENU_ORDER = ["chunk-track", "track", "chunk", "scoop", "restore", "versions", "list", "verify"]
+MENU_ORDER = ["chunk-track", "track", "chunk", "scoop", "restore", "versions", "list", "verify", "intake-zip"]
 
 
 def _write(text: str) -> None:
@@ -208,10 +209,11 @@ def interactive(scripts: dict, args) -> int:
             continue
         target = None
         if COMMANDS[command_id][2]:
-            target = projects_browser_pick_directory(browse_start, _read, _write)
+            include_ext = ".zip" if command_id == "intake-zip" else None
+            target = projects_browser_pick_directory(browse_start, _read, _write, include_ext=include_ext)
             if target is None:
                 continue
-            browse_start = target.parent
+            browse_start = target.parent if target.is_file() else target
             _write(f"\ntarget: {target}\n")
             if command_id == "scoop" and not args.dry_run and not confirm(
                     "This verifies the archive and then REMOVES the verified source files. Continue?"):

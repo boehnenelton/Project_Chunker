@@ -20,9 +20,10 @@ import tempfile
 import time
 import zipfile
 import zlib
+import json
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from lib_bejson_Projects_locks import ProjectsPathLock
 from lib_bejson_Core_bejson_path_guard import bejson_safe_join
@@ -274,3 +275,47 @@ def projects_zip_stage(zip_path: Path, max_entries: int = DEFAULT_MAX_ENTRIES,
 # Removes the staging directory (always safe: it is a temp dir this module created).
 def projects_zip_cleanup(staged: StagedZip) -> None:
     shutil.rmtree(staged.stage_parent, ignore_errors=True)
+
+
+# Inspects a zip archive in memory (reads tracker manifest or derives from top folder / file name)
+# to preview its identity without extracting the entire archive.
+def projects_zip_preview_identity(zip_path: Path) -> Tuple[str, str, str]:
+    from lib_bejson_Projects_tracker import (
+        DEFAULT_PACKAGE_VERSION,
+        DEFAULT_PROJECT_VERSION,
+        projects_tracker_derive_from_folder,
+        projects_tracker_extract_identity,
+        projects_tracker_filename_identity,
+    )
+    zip_file_path = Path(zip_path)
+    if zip_file_path.is_file():
+        try:
+            with zipfile.ZipFile(zip_file_path, "r") as archive_handle:
+                for entry_name in archive_handle.namelist():
+                    base_name = PurePosixPath(entry_name).name
+                    if base_name in ("bejson_project.json", ".bejson_project.json"):
+                        try:
+                            manifest_bytes = archive_handle.read(entry_name)
+                            manifest_doc = json.loads(manifest_bytes.decode("utf-8"))
+                            if isinstance(manifest_doc, dict):
+                                extracted_identity = projects_tracker_extract_identity(manifest_doc)
+                                if extracted_identity.get("Project_Name"):
+                                    return (
+                                        extracted_identity["Project_Name"],
+                                        extracted_identity.get("Project_Version") or DEFAULT_PROJECT_VERSION,
+                                        extracted_identity.get("Package_Version") or DEFAULT_PACKAGE_VERSION,
+                                    )
+                        except Exception as manifest_read_error:
+                            _log.debug("could not parse internal manifest in %s: %s", zip_file_path.name, manifest_read_error)
+                infos = archive_handle.infolist()
+                single_prefix = projects_zip_project_prefix(infos)
+                if single_prefix:
+                    return projects_tracker_derive_from_folder(single_prefix)
+        except Exception as archive_inspect_error:
+            _log.debug("in-memory inspection failed for %s: %s", zip_file_path.name, archive_inspect_error)
+
+    filename_identity = projects_tracker_filename_identity(zip_file_path.name)
+    if filename_identity:
+        return filename_identity
+    return projects_tracker_derive_from_folder(zip_file_path.stem)
+

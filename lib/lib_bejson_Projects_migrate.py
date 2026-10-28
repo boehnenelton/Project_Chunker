@@ -33,9 +33,11 @@ from lib_bejson_Projects_paths import StorageLayout
 from lib_bejson_Projects_pipeline import RunOptions, projects_pipeline_run_zip
 from lib_bejson_Projects_registry import projects_registry_get
 from lib_bejson_Projects_snapshot import projects_snapshot_iter_rows, projects_snapshot_load
+from lib_bejson_Projects_tracker import IdentityOverride
 from lib_bejson_Projects_zip import (
     ProjectsZipError,
     projects_zip_inspect,
+    projects_zip_preview_identity,
     projects_zip_project_prefix,
     projects_zip_sha256,
 )
@@ -55,6 +57,7 @@ BOOL_DEFAULTS: Dict[str, bool] = {
     "Binary_Enabled": True,
     "Deep_Verify": True,
     "Stop_On_First_Error": False,
+    "Prompt_Project_Name": False,
 }
 BOOL_HELP = {
     "Dry_Run": "Scan and plan only; chunk and verify phases change nothing (no registry, snapshots, or zips).",
@@ -64,6 +67,7 @@ BOOL_HELP = {
     "Binary_Enabled": "Store binary files in the chunks. If off, zips containing binaries are only partly captured and are never removed.",
     "Deep_Verify": "Verify phase compares every snapshot file to the zip's own bytes, not just hashes and headers.",
     "Stop_On_First_Error": "Stop a phase at the first failing zip instead of continuing.",
+    "Prompt_Project_Name": "Prompt interactively to choose or edit the project name for each zip before chunking.",
 }
 RADIO_OPTIONS: Dict[str, Tuple[str, ...]] = {
     "Source_Mode": ("project_index_root", "custom"),
@@ -375,7 +379,8 @@ def _emit(progress: Optional[PROGRESS], **event: Any) -> None:
 def projects_migrate_chunk_phase(layout: StorageLayout, cfg: MigratorConfig, config_file: Optional[Path] = None,
                                  progress: Optional[PROGRESS] = None,
                                  cancelled: Callable[[], bool] = lambda: False,
-                                 filters_file: Optional[Path] = None) -> PhaseResult:
+                                 filters_file: Optional[Path] = None,
+                                 prompt_name_callback: Optional[Callable[[ZipCandidate, str, str, str], Optional[str]]] = None) -> PhaseResult:
     filters = projects_filters_load(filters_file or Path(__file__).resolve().parent.parent / "config" / FILTERS_CONFIG_NAME)
     source = projects_migrate_resolve_source(cfg)
     ledger = projects_migrate_ledger_load(layout)
@@ -407,9 +412,40 @@ def projects_migrate_chunk_phase(layout: StorageLayout, cfg: MigratorConfig, con
         if cfg.dry_run:
             result.add(cand.rel, "would chunk", "planned", f"{cand.files} file(s), {cand.size} bytes")
             continue
+        target_identity = None
+        if prompt_name_callback is not None or cfg.flags.get("Prompt_Project_Name"):
+            detected_project_name, detected_ver, detected_pkg = projects_zip_preview_identity(cand.path)
+            if prompt_name_callback is not None:
+                chosen_project_name = prompt_name_callback(cand, detected_project_name, detected_ver, detected_pkg)
+            else:
+                import sys
+                sys.stdout.write(f"\n[Zip {number}/{len(candidates)}] {cand.rel}\n")
+                sys.stdout.write(f"  Detected Project Name: {detected_project_name} (V{detected_ver}-PKG{detected_pkg})\n")
+                try:
+                    prompt_input = input(f"  Select project name [Enter = accept '{detected_project_name}', 's' = skip, 'q' = quit]: ").strip()
+                except (EOFError, KeyboardInterrupt):
+                    prompt_input = "q"
+                if prompt_input.lower() in ("q", "quit"):
+                    chosen_project_name = "STOP"
+                elif prompt_input.lower() in ("s", "skip"):
+                    chosen_project_name = "SKIP"
+                elif prompt_input:
+                    chosen_project_name = prompt_input
+                else:
+                    chosen_project_name = detected_project_name
+
+            if chosen_project_name == "SKIP":
+                result.add(cand.rel, "skip", "skipped", "skipped by user selection")
+                continue
+            elif chosen_project_name == "STOP":
+                result.stopped_early = True
+                break
+            elif chosen_project_name:
+                target_identity = IdentityOverride(name=chosen_project_name)
         try:
             zres = projects_pipeline_run_zip(layout, RunOptions(
                 target=cand.path, track=True, chunk=True, scoop=True, keep_zip=True,
+                identity=target_identity,
                 exclude_dirs=filters.dir_patterns if filters.apply_to_zip else (),
                 exclude_files=filters.file_patterns if filters.apply_to_zip else (),
                 binary_enabled=cfg.flags["Binary_Enabled"], config_file=config_file,

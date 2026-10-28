@@ -16,34 +16,37 @@ VERSION = "1.8.0"
 PAGE_SIZE = 15
 
 
-# Immediate sub-directories of `directory`, sorted, hidden ones only when show_hidden. Unreadable -> [].
-def projects_browser_list_subdirs(directory: Path, show_hidden: bool = False) -> List[Path]:
+# Immediate sub-directories (and optionally files matching include_ext) of `directory`, sorted.
+def projects_browser_list_subdirs(directory: Path, show_hidden: bool = False, include_ext: Optional[str] = None) -> List[Path]:
     try:
-        entries = [p for p in Path(directory).iterdir() if p.is_dir() and not p.is_symlink()]
+        entries = [p for p in Path(directory).iterdir() if not p.is_symlink() and (
+            p.is_dir() or (include_ext and p.is_file() and p.name.lower().endswith(include_ext.lower())))]
     except OSError:
         return []
-    return sorted((p for p in entries if show_hidden or not p.name.startswith(".")), key=lambda p: p.name.lower())
+    return sorted((p for p in entries if show_hidden or not p.name.startswith(".")),
+                  key=lambda p: (not p.is_dir(), p.name.lower()))
 
 
-# Interactive picker. Commands: <number> enter that folder, s select the current folder, u up, n/p page,
-# h toggle hidden folders, q cancel. Returns the chosen directory or None (cancel or end of input).
+# Interactive picker. Commands: <number> enter folder (or pick file), s select current folder, u up, n/p page,
+# h toggle hidden folders, q cancel. Returns the chosen directory or file, or None (cancel/EOF).
 def projects_browser_pick_directory(start: Path,
                                     read_choice: Callable[[str], str],
-                                    write: Callable[[str], None]) -> Optional[Path]:
+                                    write: Callable[[str], None],
+                                    include_ext: Optional[str] = None) -> Optional[Path]:
     current = Path(start).resolve()
     if not current.is_dir():
         current = Path.home()
     show_hidden = False
     page = 0
     while True:
-        subdirs = projects_browser_list_subdirs(current, show_hidden)
+        subdirs = projects_browser_list_subdirs(current, show_hidden, include_ext)
         pages = max(1, -(-len(subdirs) // PAGE_SIZE))
         page = min(page, pages - 1)
         write(f"\n  {current}\n")
-        for offset, folder in enumerate(subdirs[page * PAGE_SIZE:(page + 1) * PAGE_SIZE], start=1):
-            write(f"   {offset:>2}) {folder.name}/\n")
+        for offset, entry in enumerate(subdirs[page * PAGE_SIZE:(page + 1) * PAGE_SIZE], start=1):
+            write(f"   {offset:>2}) {entry.name}{'/' if entry.is_dir() else ''}\n")
         if not subdirs:
-            write("   (no sub-folders)\n")
+            write("   (no entries)\n")
         write(f"  [s] select this folder  [u] up  [n]/[p] page {page + 1}/{pages}  "
               f"[h] hidden {'on' if show_hidden else 'off'}  [q] cancel\n")
         try:
@@ -63,6 +66,9 @@ def projects_browser_pick_directory(start: Path,
         elif choice == "h":
             show_hidden, page = not show_hidden, 0
         elif choice.isdigit() and 1 <= int(choice) <= len(subdirs[page * PAGE_SIZE:(page + 1) * PAGE_SIZE]):
-            current, page = subdirs[page * PAGE_SIZE + int(choice) - 1], 0
+            chosen = subdirs[page * PAGE_SIZE + int(choice) - 1]
+            if chosen.is_file():
+                return chosen
+            current, page = chosen, 0
         else:
             write("  ?\n")

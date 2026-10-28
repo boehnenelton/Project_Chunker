@@ -9,6 +9,7 @@
   "Binary_Enabled": true,
   "Deep_Verify": true,
   "Stop_On_First_Error": false,
+  "Prompt_Project_Name": false,
   "Records_Type": [
     "MigratorSetting"
   ],

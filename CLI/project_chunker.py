@@ -82,6 +82,10 @@ def _build_parser() -> argparse.ArgumentParser:
                              "restorable). Needs --confirm-delete-filtered on a live run")
     parser.add_argument("--confirm-delete-filtered", action="store_true",
                         help="explicit confirmation for --delete-filtered (preview first with --dry-run)")
+    parser.add_argument("--prompt-name", "-i", action="store_true",
+                        help="prompt interactively to select/confirm the project name for each zip or target")
+    parser.add_argument("extra_targets", nargs="*",
+                        help="optional additional targets or .zip files to process in sequence")
     parser.add_argument("--project-name", "--name", dest="project_name", metavar="NAME",
                         help="identity override: register under this project name (wins over tracker, folder and zip name)")
     parser.add_argument("--project-version", "--ver", "-V", dest="project_version", metavar="VER",
@@ -274,29 +278,68 @@ def _cmd_list_filters(args) -> int:
     return EXIT_OK
 
 
-def _cmd_run(layout, args) -> int:
-    filters = _load_filters(args, args.dry_run)
+def _cmd_run_one(layout, args, target_path: Path, filters) -> int:
     common = dict(binary_enabled=args.binary_enabled, filter_binary=filters.binary_enabled,
                   config_file=PROJECT_ROOT / "config" / "config.json",
                   extensions=tuple(args.ext) if args.ext else None,
                   max_file_bytes=int(args.max_file_mb * 1024 * 1024), on_conflict=args.on_conflict)
-    identity = IdentityOverride(args.project_name or "", args.project_version or "", args.package_version or "",
+    current_name = args.project_name or ""
+    if args.prompt_name:
+        if target_path.is_file():
+            from lib_bejson_Projects_zip import projects_zip_preview_identity
+            detected_name, detected_ver, detected_pkg = projects_zip_preview_identity(target_path)
+            sys.stdout.write(f"\nTarget Zip: {target_path.name}\n")
+            sys.stdout.write(f"  Detected Project Name: {detected_name} (V{detected_ver}-PKG{detected_pkg})\n")
+            try:
+                user_input = input(f"  Select project name [Enter = accept '{detected_name}', 's' = skip]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                user_input = "s"
+            if user_input.lower() in ("s", "skip"):
+                sys.stdout.write("  Skipped.\n")
+                return EXIT_OK
+            current_name = user_input or detected_name
+        elif target_path.is_dir():
+            from lib_bejson_Projects_tracker import (
+                projects_tracker_derive_from_folder,
+                projects_tracker_extract_identity,
+                projects_tracker_find_file,
+                projects_tracker_read_file,
+            )
+            found_tracker = projects_tracker_find_file(target_path)
+            if found_tracker:
+                tracker_data = projects_tracker_read_file(found_tracker)
+                extracted_ident = projects_tracker_extract_identity(tracker_data) if tracker_data else {}
+                detected_name = extracted_ident.get("Project_Name") or target_path.name
+            else:
+                detected_name = projects_tracker_derive_from_folder(target_path.name)[0]
+            sys.stdout.write(f"\nTarget Directory: {target_path.name}\n")
+            sys.stdout.write(f"  Detected Project Name: {detected_name}\n")
+            try:
+                user_input = input(f"  Select project name [Enter = accept '{detected_name}', 's' = skip]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                user_input = "s"
+            if user_input.lower() in ("s", "skip"):
+                sys.stdout.write("  Skipped.\n")
+                return EXIT_OK
+            current_name = user_input or detected_name
+
+    identity = IdentityOverride(current_name, args.project_version or "", args.package_version or "",
                                 project_type=args.project_type or "", status=args.project_status or "")
     if identity.active():
         common["identity"] = identity
     if args.identity_from_filename:
-        if not Path(args.target).is_file():
+        if not target_path.is_file():
             raise ProjectsPipelineError("--identity-from-filename applies to a zip target only")
         common["identity_from_filename"] = True
-    if Path(args.target).is_file():
+    if target_path.is_file():
         # Zip mode captures everything (so the zip can be deleted safely) unless apply_to_zip is on in the config.
         zip_dirs = (tuple(filters.dir_patterns) if filters.apply_to_zip else ()) + tuple(args.exclude)
         zip_files = tuple(filters.file_patterns) if filters.apply_to_zip else ()
         return _cmd_zip(layout, args, RunOptions(
-            target=Path(args.target), track=True, chunk=True, scoop=True, dry_run=args.dry_run,
+            target=target_path, track=True, chunk=True, scoop=True, dry_run=args.dry_run,
             exclude_dirs=zip_dirs, exclude_files=zip_files, keep_zip=args.keep_zip, **common))
     options = RunOptions(
-        target=Path(args.target), track=args.track, chunk=args.chunk, scoop=args.scoop, dry_run=args.dry_run,
+        target=target_path, track=args.track, chunk=args.chunk, scoop=args.scoop, dry_run=args.dry_run,
         exclude_dirs=tuple(filters.dir_patterns) + tuple(args.exclude),
         exclude_files=tuple(filters.file_patterns), delete_filtered=args.delete_filtered,
         confirm_delete_filtered=args.confirm_delete_filtered, **common)
@@ -345,11 +388,22 @@ def _cmd_run(layout, args) -> int:
                      f"file(s), {result.scoop.dirs_removed} empty dir(s)"
                      f"{', source folder removed' if result.scoop.root_removed else ''}; "
                      f"{len(result.scoop.residual)} left in place")
-        lines.append(f"original   : {args.target}  (restore with --restore {info.versioned_uuid})")
+        lines.append(f"original   : {target_path}  (restore with --restore {info.versioned_uuid})")
     lines += [f"superseded : {p}" for p in payload["superseded"]]
     lines += [f"warning    : {w}" for w in result.warnings]
     _emit(payload, args.as_json, lines)
     return EXIT_OK
+
+
+def _cmd_run(layout, args) -> int:
+    filters = _load_filters(args, args.dry_run)
+    raw_targets = ([args.target] if args.target else []) + getattr(args, "extra_targets", [])
+    exit_code = EXIT_OK
+    for raw in raw_targets:
+        ret = _cmd_run_one(layout, args, Path(raw), filters)
+        if ret != EXIT_OK:
+            exit_code = ret
+    return exit_code
 
 
 def main(argv=None) -> int:
@@ -357,7 +411,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     projects_logging_configure(args.log_level)
 
-    needs_target = args.track or args.chunk or args.scoop or args.set_status or args.set_type or args.set_version or args.set_pkg
+    needs_target = args.track or args.chunk or args.scoop or args.set_status or args.set_type or args.set_version or args.set_pkg or args.prompt_name
     if not (needs_target or args.list_registry or args.verify or args.restore or args.versions
             or args.list_filters):
         parser.error("choose at least one of --track, --chunk, --scoop, --restore, --versions, --list, --verify, "
@@ -375,8 +429,8 @@ def main(argv=None) -> int:
     if args.max_file_mb < 0:
         parser.error("--max-file-mb must be >= 0")
     if (args.project_name or args.project_version or args.package_version or args.project_type
-            or args.project_status or args.identity_from_filename) and not (args.track or args.chunk or args.scoop or (args.target and Path(args.target).is_file())):
-        parser.error("--project-name/--project-version/--package-version/--type/--status/--identity-from-filename apply to a run "
+            or args.project_status or args.identity_from_filename or args.prompt_name) and not (args.track or args.chunk or args.scoop or (args.target and Path(args.target).is_file())):
+        parser.error("--project-name/--project-version/--package-version/--type/--status/--identity-from-filename/--prompt-name apply to a run "
                      "(--track/--chunk/--scoop or a zip target) only")
     if args.verify_project and not args.verify:
         parser.error("--verify-project needs --verify")

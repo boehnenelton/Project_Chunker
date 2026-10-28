@@ -98,3 +98,12 @@ CLI project_chunker / --project-name, --project-version, --package-version, --id
 - `<storage>/superseded/<project>/<stem>.superseded-<UTC>.bejson` — previous snapshots replaced by different content (never read by verify or the registry; delete by hand when no longer wanted).
 - `<data_dir>/active_project.json` — BEJSON 104a, Records_Type ActiveProject, fields active_project, set_at; zero rows = none.
 
+## V1.8.0-PKG113 — interactive zip project name selection
+lib_bejson_Projects_zip / projects_zip_preview_identity (zip_path) -> Tuple[str, str, str] — in-memory preview of zip identity without extraction
+lib_bejson_Projects_migrate / projects_migrate_chunk_phase (layout, cfg, config_file, progress, cancelled, filters_file, prompt_name_callback) — supports interactive project name selection and callbacks
+lib_bejson_Projects_browser / projects_browser_pick_directory (start, read_choice, write, include_ext) — browser picker supporting matching file selection
+CLI project_chunker / --prompt-name (-i) — interactive prompt to select/confirm project name for each zip or target
+Helper project_db_migrator / --prompt-name, Prompt_Project_Name menu toggle
+Menu project_chunker_menu / intake-zip command
+
+

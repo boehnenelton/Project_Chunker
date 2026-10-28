@@ -107,13 +107,15 @@ def launch_web(args) -> int:
 def menu(layout, cfg, args, config_file: Path) -> int:
     while True:
         mode = "DRY RUN" if cfg.dry_run else "LIVE"
-        _write(f"\nProject DB Migrator  [{mode}]  disposition={cfg.radios['Original_Disposition']}\n"
+        prompt_mode = "ON" if cfg.flags.get("Prompt_Project_Name") else "OFF"
+        _write(f"\nProject DB Migrator  [{mode}]  prompt_name={prompt_mode}  disposition={cfg.radios['Original_Disposition']}\n"
                "  1) Start: chunk every zip in the project DB\n"
                "  2) Verify chunks, then remove original zips\n"
                "  3) Show plan (scan only)\n"
                "  4) Toggle Dry_Run\n"
-               "  5) Show ledger summary\n"
-               "  6) Launch web UI\n"
+               "  5) Toggle Prompt_Project_Name mode\n"
+               "  6) Show ledger summary\n"
+               "  7) Launch web UI\n"
                "  0) Exit\n")
         try:
             choice = input("Select: ").strip()
@@ -135,8 +137,12 @@ def menu(layout, cfg, args, config_file: Path) -> int:
                 projects_migrate_config_save(config_file, cfg)
                 _write(f"Dry_Run is now {str(cfg.flags['Dry_Run']).lower()}\n")
             elif choice == "5":
-                _write(show_ledger(layout))
+                cfg.flags["Prompt_Project_Name"] = not cfg.flags.get("Prompt_Project_Name", False)
+                projects_migrate_config_save(config_file, cfg)
+                _write(f"Prompt_Project_Name is now {str(cfg.flags['Prompt_Project_Name']).lower()}\n")
             elif choice == "6":
+                _write(show_ledger(layout))
+            elif choice == "7":
                 return launch_web(args)
             else:
                 _write("Unknown option.\n")
@@ -148,6 +154,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="project_db_migrator", description="Automated project DB zip migrator.")
     parser.add_argument("--phase", choices=("chunk", "verify", "plan", "none"), default="chunk",
                         help="phase to run automatically on start (default: chunk; a dry run unless config says live)")
+    parser.add_argument("--prompt-name", action="store_true", help="prompt interactively for project name on each zip")
     parser.add_argument("--no-menu", action="store_true", help="run the phase and exit (no menu)")
     parser.add_argument("--storage-root", help="override the chunker storage root")
     parser.add_argument("--config", help="migrator config file (default: config/migrator_config.json)")
@@ -159,6 +166,8 @@ def main(argv=None) -> int:
 
     try:
         cfg, created = projects_migrate_config_ensure(config_file)
+        if args.prompt_name:
+            cfg.flags["Prompt_Project_Name"] = True
         projects_logging_configure(args.log_level or cfg.radios["Log_Level"])
         for warning in cfg.warnings:
             _log.warning(warning)
