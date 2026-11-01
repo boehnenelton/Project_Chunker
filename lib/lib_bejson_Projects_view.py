@@ -17,6 +17,7 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from lib_bejson_Core_bejson_core import bejson_core_get_field_map, bejson_core_load_file
 from lib_bejson_Projects_logging import projects_logging_get_logger
 from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_name
 from lib_bejson_Projects_pipeline import _find_snapshot
@@ -79,8 +80,26 @@ def projects_view_build(layout: StorageLayout) -> List[Dict[str, Any]]:
     projects = []
     for name in sorted(grouped, key=str.lower):
         cards = sorted(grouped[name], key=_sort_key, reverse=True)
+        # Enrich cards and project with Project_GUID from tracker database
+        pguid = None
+        db_path = layout.tracker_db(projects_paths_sanitize_name(name))
+        if db_path.exists():
+            tdoc = bejson_core_load_file(str(db_path))
+            if tdoc and isinstance(tdoc.get("Values"), list):
+                fm = bejson_core_get_field_map(tdoc)
+                if "Tracker_Data" in fm:
+                    for r in reversed(tdoc["Values"]):
+                        try:
+                            d = json.loads(r[fm["Tracker_Data"]])
+                            if d.get("Project_GUID") and str(d["Project_GUID"]).strip() != "GUID_PLACEHOLDER":
+                                pguid = str(d["Project_GUID"]).strip()
+                                break
+                        except Exception:
+                            continue
+        for c in cards:
+            c["Project_GUID"] = pguid or ""
         projects.append({"name": name, "version_count": len(cards), "latest_status": cards[0]["Status"],
-                         "versions": cards})
+                         "Project_GUID": pguid or "", "versions": cards})
     return projects
 
 

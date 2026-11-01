@@ -44,7 +44,7 @@ from lib_bejson_Core_mfdb_validator import (
 DEFAULT_EXTENSIONS = [".py", ".js", ".ts", ".html", ".css", ".md", ".json",
                        ".sh", ".txt", ".bejson", ".tsx", ".jsx"]
 DEFAULT_EXCLUDES = [".git", "__pycache__", "node_modules", "lib", "output",
-                     ".mfdb_lock", "dist", "build"]
+                     ".mfdb_lock", "dist", "build", "images"]
 
 # ── Chunked-104 schema (BEJSON 104a, flat, one record per file) ────────────────
 

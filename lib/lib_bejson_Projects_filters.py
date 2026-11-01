@@ -50,6 +50,7 @@ DEFAULT_SETTINGS: List[Tuple[str, str, bool, str, str]] = [
     ("virtualenv", GROUP_DIRS, True, ".venv,venv", "Python virtual environments."),
     ("build_output", GROUP_DIRS, True, "dist,build,out,.next,.nuxt,.turbo,.parcel-cache,coverage", "Generated build output."),
     ("chunk_output", GROUP_DIRS, True, ".mfdb_lock,project_snapshots,.chunker_stage_*", "The chunker's own storage, locks and staging."),
+    ("images", GROUP_DIRS, True, "images", "Project images and screenshot directories."),
     ("ide", GROUP_DIRS, False, ".idea,.vscode", "Editor settings folders."),
     ("chunk_files", GROUP_FILES, True, "*.chunk.bejson,*.chunked.bejson,*.mfdb132.bejson", "Chunk files produced by chunking."),
     ("os_junk", GROUP_FILES, True, ".DS_Store,Thumbs.db,desktop.ini", "Operating-system metadata files."),

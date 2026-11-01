@@ -60,7 +60,8 @@ footer{margin-top:24px;font-size:.8rem;opacity:.7}footer a{color:var(--accent)}
 <div class="cards">
 {% for v in p.versions %}
 <div class="card"><h3>{{ v.Version_Label }} <span class="st">{{ v.Status }}</span></h3>
-<dl><dt>UUID</dt><dd>{{ v.Versioned_UUID }}</dd>
+<dl>{% if p.Project_GUID or v.Project_GUID %}<dt>Project GUID</dt><dd>{{ p.Project_GUID or v.Project_GUID }}</dd>{% endif %}
+<dt>Versioned UUID</dt><dd>{{ v.Versioned_UUID }}</dd>
 <dt>Original location</dt><dd>{{ v.Original_Path or '-' }}</dd>
 <dt>Snapshot</dt><dd>{% if v.snapshot_state == 'ok' %}{{ v.snapshot_name }} &middot; {{ v.files }} file(s) &middot; {{ v.snapshot_bytes }} bytes{% else %}{{ v.snapshot_state }}{% endif %}</dd>
 {% if v.snapshot_state == 'ok' %}<dt>Snapshot date</dt><dd>{{ v.snapshot_date or '-' }}</dd>

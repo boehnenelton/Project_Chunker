@@ -265,7 +265,13 @@ def projects_edit_details(layout: StorageLayout, name: str) -> Dict[str, Any]:
     extras = [_field_card(k, k.replace("_", " "), "", False, "text",
                           {uid: _read_value(docs[uid], k, "") if uid in docs else "" for uid in order}, order)
               for k in sorted(extra_keys)]
-    return {"name": name, "versions": len(rows), "editable": editable, "extras": extras,
+    project_guid = ""
+    for doc in docs.values():
+        pg = _read_value(doc, "Project_GUID", "Project_GUID")
+        if pg and pg != "GUID_PLACEHOLDER":
+            project_guid = pg
+            break
+    return {"name": name, "project_guid": project_guid, "versions": len(rows), "editable": editable, "extras": extras,
             "missing_trackers": [u for u in order if u not in docs], "snapshot_limit_mb": MAX_SNAPSHOT_REWRITE_BYTES // (1024 * 1024)}
 
 

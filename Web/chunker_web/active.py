@@ -55,10 +55,12 @@ def active_resolve(ctx: Ctx, projects: Optional[List[Dict[str, Any]]] = None) ->
     latest = project["versions"][0]
     source = _source_folder(ctx, project)
     return {"active": {
-        "name": name, "version_count": project["version_count"], "latest_status": project["latest_status"],
+        "name": name, "Project_GUID": project.get("Project_GUID", ""),
+        "version_count": project["version_count"], "latest_status": project["latest_status"],
         "latest": {"Versioned_UUID": latest["Versioned_UUID"], "Version_Label": latest["Version_Label"],
-                   "Status": latest["Status"]},
-        "versions": [{"Versioned_UUID": c["Versioned_UUID"], "Version_Label": c["Version_Label"], "Status": c["Status"]}
+                   "Status": latest["Status"], "Project_GUID": latest.get("Project_GUID", "")},
+        "versions": [{"Versioned_UUID": c["Versioned_UUID"], "Version_Label": c["Version_Label"], "Status": c["Status"],
+                      "Project_GUID": c.get("Project_GUID", "")}
                      for c in project["versions"]],
         "source_path": source, "source_exists": source is not None}, "was": None}
 

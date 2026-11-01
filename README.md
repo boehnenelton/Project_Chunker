@@ -1,6 +1,6 @@
 # Project Chunker
 
-High-density project snapshotting, atomic archive-and-scoop (`--scoop`), multi-version registry tracking, and zero-SQL web workstation for Linux and Termux environments.
+High-density project snapshotting, atomic archive-and-scoop (`--scoop`), multi-version registry tracking, and zero-SQL web workstation for Linux environments.
 
 `Project Chunker` provides an end-to-end framework for capturing full repository state into portable, deterministic BEJSON 104a snapshot containers. It eliminates unmanaged filesystem drift through single-file containerization, verified SHA-256 byte reconciliation, automated packaging versioning, and an integrated local web workstation.
 
@@ -21,13 +21,13 @@ High-density project snapshotting, atomic archive-and-scoop (`--scoop`), multi-v
 
 ## Prerequisites & Setup
 
-`Project Chunker` requires a modern Linux or Android Termux environment running Python 3.10 or higher.
+`Project Chunker` requires a modern Linux or POSIX environment running Python 3.10 or higher.
 
 ### Dependencies
 - Python 3.10+
 - Flask (required for the web UI)
 - Pillow (required for image processing and thumbnail resizing)
-- Playwright / Termux Playwright (optional; for headless browser test execution)
+- Playwright (optional; for headless browser test execution)
 
 ### Environment Configuration
 Optionally configure persistent environment variables in your shell profile (`~/.bashrc` or `~/.profile`):
@@ -132,6 +132,19 @@ python3 CLI/project_chunker.py /path/to/archive.zip --prompt-name
 # Run multi-zip database migration with project name prompting on each archive
 python3 Helper/project_db_migrator.py --prompt-name
 ```
+
+### 7. Dual-UUID Architecture & Project_GUID Governance
+Project Chunker maintains a strict separation between global project identity and release state:
+- **`Project_GUID` (Global Entity ID)**: An immutable UUID belonging to the project itself, shared across all versions (`V<ver>-PKG<pkg>`).
+  - **Inheritance Rule**: When tracking or snapshotting a project that lacks a UUID, if an existing project with the same name exists, it inherits the existing `Project_GUID` **only if the name contains more than 8 characters**.
+  - **Collision Prevention**: Project names with 8 characters or fewer receive a fresh, unique UUID to prevent short common names from accidentally sharing identity.
+  - **Tracker Stamping**: Once assigned, the `Project_GUID` is stamped atomically into the on-disk `bejson_project.json`.
+- **`Versioned_UUID` (Release ID)**: A distinct UUID generated per release package or snapshot delivery, uniquely identifying that specific point-in-time codebase.
+
+### 8. Subdirectory Boundary Refusal Guard
+To prevent nested tracking conflicts and storage pollution, Project Chunker enforces hierarchical directory isolation:
+- Inspects target parent paths for existing `bejson_project.json` files and compares against registered `Original_Path` records.
+- Immediately refuses to track or chunk any target that is a subdirectory of an already tracked project.
 
 ---
 

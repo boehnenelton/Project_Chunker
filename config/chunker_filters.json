@@ -86,6 +86,13 @@
       "The chunker's own storage, locks and staging."
     ],
     [
+      "images",
+      "dirs",
+      true,
+      "images",
+      "Project images and screenshot directories."
+    ],
+    [
       "ide",
       "dirs",
       false,

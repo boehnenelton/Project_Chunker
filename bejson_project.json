@@ -4,13 +4,13 @@
   "Format_Creator": "Elton Boehnen",
   "Session_Id": "33d1931b-1636-4c12-bfe4-34a499c91585",
   "Project_Name": "Project_Chunker",
-  "Project_Modified_Date": "2026-10-28T14:26:00Z",
+  "Project_Modified_Date": "2026-11-01T00:23:02Z",
   "Project_Description": "Hybrid project chunker and tracker: CLI + menu over a tracker database, master registry and per-project snapshot chunks; archive (scoop) and restore; built on the lib_bejson_Projects family; unified Flask web app.",
   "Schema_Version": "1.7.0",
   "Project_Version": "1.8.0",
-  "Package_Version": "113",
+  "Package_Version": "114",
   "Project_GUID": "GUID_PLACEHOLDER",
-  "Versioned_UUID": "84ca19da-ca28-4bc3-b8e1-8e000713af2b",
+  "Versioned_UUID": "b305259a-b544-4ca5-9abf-a44e6383091a",
   "Is_Registered": false,
   "Project_Type": "Standalone_Tool",
   "Records_Type": [
@@ -98,23 +98,26 @@
     [
       "Project_Chunker",
       "1.8.0",
-      "113",
+      "114",
       ".",
       "GUID_PLACEHOLDER",
-      "84ca19da-ca28-4bc3-b8e1-8e000713af2b",
+      "b305259a-b544-4ca5-9abf-a44e6383091a",
       "33d1931b-1636-4c12-bfe4-34a499c91585",
       "Elton Boehnen",
       "Hybrid project chunker and tracker: CLI + menu over a tracker database, master registry and per-project snapshot chunks; archive (scoop) and restore; built on the lib_bejson_Projects family; unified Flask web app.",
-      "2026-10-28T14:26:00Z",
-      "2026-10-28T14:26:00Z",
+      "2026-11-01T00:23:02Z",
+      "2026-11-01T00:23:02Z",
       "https://github.com/boehnenelton/Project_Chunker.git",
       "main",
       "902b0daa7ecce3de8c0d7e4215f297729c155223",
       "CLI/project_chunker.py",
       "python3",
       "300",
-      "Project_Chunker-V1.8.0-PKG113.zip",
-      ""
+      "Project_Chunker-V1.8.0-PKG114.zip",
+      "56d55f59f70704fb2a2a4fef4dd5f8b08ef419fd7795f7d8dd1e6e5f15333681"
     ]
-  ]
+  ],
+  "Package_Date": "2026-11-01T00:23:02Z",
+  "Archive_Filename": "Project_Chunker-V1.8.0-PKG114.zip",
+  "Package_Checksum_SHA256": "56d55f59f70704fb2a2a4fef4dd5f8b08ef419fd7795f7d8dd1e6e5f15333681"
 }

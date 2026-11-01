@@ -145,6 +145,7 @@
     }
     bar.appendChild(h("span", { "class": P + "active__label", text: "Active project" }));
     bar.appendChild(h("strong", { "class": P + "active__name", text: a.name }));
+    if (a.Project_GUID) { bar.appendChild(pill("GUID " + a.Project_GUID.slice(0, 8), "muted")); }
     bar.appendChild(pill(a.latest.Version_Label, "muted")); bar.appendChild(pill(a.latest.Status, kindOf(a.latest.Status)));
     bar.appendChild(h("a", { "class": P + "active__link", href: "/projects", text: "Change" }));
     bar.appendChild(btn("Clear", function () { clearActive().catch(function (e) { toast(e.message, true); }); }));
@@ -591,9 +592,13 @@
       var id = "acc-" + idx + "-" + Date.now().toString(36);
       var chev = h("span", { "class": P + "acc__chev", "aria-hidden": "true", text: "+" });
       var latest = p.versions[0] || {};
+      var metaChildren = [pill(p.version_count + " version(s)")];
+      if (p.Project_GUID) metaChildren.push(pill("GUID " + p.Project_GUID.slice(0, 8), "muted"));
+      metaChildren.push(pill(latest.Version_Label || "", ""));
+      metaChildren.push(pill(p.latest_status, kindOf(p.latest_status)));
       var head = h("button", { type: "button", id: id + "-h", "class": P + "acc__head", "aria-expanded": "false", "aria-controls": id },
         h("span", { "class": P + "acc__title", text: p.name }),
-        h("span", { "class": P + "acc__meta" }, pill(p.version_count + " version(s)"), pill(latest.Version_Label || "", ""), pill(p.latest_status, kindOf(p.latest_status))), chev);
+        h("span", { "class": P + "acc__meta" }, metaChildren), chev);
       var body = h("div", { id: id, "class": P + "acc__body", role: "region", "aria-labelledby": id + "-h", hidden: true });
       // the active-project control sits outside the (button) header so it can be used with the card collapsed
       var activeBtn = btn("Make active", function () {
@@ -617,14 +622,18 @@
         if (v.Status === "tracked") tracked++; else if (v.Status === "chunked") chunked++; else if (v.Status === "archived") archived++;
         if (v.snapshot_state === "ok") bytesTotal += v.snapshot_bytes;
       });
-      c.body.appendChild(stats([["versions", vs.length], ["tracked", tracked], ["chunked", chunked], ["archived", archived], ["snapshots", bytes(bytesTotal)]]));
+      var statItems = [["versions", vs.length], ["tracked", tracked], ["chunked", chunked], ["archived", archived], ["snapshots", bytes(bytesTotal)]];
+      if (p.Project_GUID) {
+        statItems.unshift(["project guid", p.Project_GUID.slice(0, 8) + "…"]);
+      }
+      c.body.appendChild(stats(statItems));
       c.body.appendChild(h("div", { "class": P + "subtitle", text: "Versions" }));
       vs.forEach(function (v) {
         var facts = v.snapshot_state === "ok" ? v.files + " files, " + v.empty_dirs + " empty dirs, " + bytes(v.snapshot_bytes) + " · " + (v.snapshot_date || "") : "snapshot " + v.snapshot_state;
         c.body.appendChild(h("div", { "class": P + "row" }, h("div", { "class": P + "row__info" },
           h("span", { "class": P + "row__label" }, v.Version_Label + "  ", pill(v.Status, kindOf(v.Status))),
           h("span", { "class": P + "row__desc", text: facts }),
-          h("span", { "class": P + "row__desc", text: "id " + v.Versioned_UUID.slice(0, 8) + (v.Original_Path ? " · source " + v.Original_Path : "") + (v.Updated_At ? " · updated " + v.Updated_At : "") })),
+          h("span", { "class": P + "row__desc", text: (v.Project_GUID ? "guid " + v.Project_GUID.slice(0, 8) + " · " : "") + "version " + v.Versioned_UUID.slice(0, 8) + (v.Original_Path ? " · source " + v.Original_Path : "") + (v.Updated_At ? " · updated " + v.Updated_At : "") })),
           h("div", { "class": P + "actions" },
             btn("Files", function () { showFiles(p.name, v); }), btn("Export zip", function () { exportZip(v); }),
             h("a", { "class": P + "btn", href: "/restore?v=" + encodeURIComponent(v.Versioned_UUID), text: "Restore" }))));
@@ -643,6 +652,12 @@
     function buildEditor(c, d, box) {
       var nVer = c.p.versions.length, items = [], reviewBox = h("div"), jobBox = h("div", { hidden: true }), busy = false, plan = null;
       var summary = muted(""), reviewBtn = btn("Review changes", review, "primary"), applyBtn = btn("", apply, "primary");
+      if (d.project_guid) {
+        box.appendChild(h("div", { style: "display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;" },
+          h("span", { style: "font-size: 0.85em; opacity: 0.7;", text: "Project GUID:" }),
+          h("code", { style: "font-family: monospace; color: var(--accent, #DE2626);", text: d.project_guid })
+        ));
+      }
       var snaps = check("Also update the tracker copy stored inside each snapshot (Restore writes it back out; rewrites snapshot files)", true, invalidate);
       var nameWarn = banner("Renaming moves this project's tracker database and snapshot files and rewrites every snapshot header. It cannot be undone from here (a backup of the registry and tracker database is kept).");
       nameWarn.hidden = true;
