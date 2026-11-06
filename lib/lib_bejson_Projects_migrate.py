@@ -7,7 +7,7 @@ Description:     Project DB migrator logic. Config (BEJSON 104a, Dry_Run default
                  the chunk phase (every valid zip -> track + chunk, zip kept) and the verify phase (re-check zip,
                  registry and snapshot, optionally every file byte-for-byte against the zip, then delete / quarantine /
                  keep the original). Nothing here prompts for paths; front ends (Helper CLI/menu, Flask) call it.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   d7c5eb70-63e7-4c2d-b456-545ad3a8b084
 """
@@ -42,7 +42,7 @@ from lib_bejson_Projects_zip import (
     projects_zip_sha256,
 )
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 CONFIG_NAME = "migrator_config.json"
 LEDGER_NAME = "ledger.bejson"
 PROGRESS = Callable[[Dict[str, Any]], None]

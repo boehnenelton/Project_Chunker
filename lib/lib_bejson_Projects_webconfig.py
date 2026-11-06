@@ -5,7 +5,7 @@ Family:          Projects
 Description:     Settings of the Project Chunker web UI: config/web_config.json (BEJSON 104a rows setting_name /
                  setting_value / description; no state in headers). Exported on first run, never overwritten;
                  unreadable or invalid values fall back to the built-in defaults, per setting.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   2a32ef34-c046-4814-980c-4019b8a8fa93
 """
@@ -17,7 +17,7 @@ from lib_bejson_Core_bejson_core import bejson_core_atomic_write, bejson_core_ge
 from lib_bejson_Core_bejson_validator import validate_bejson
 from lib_bejson_Projects_logging import projects_logging_get_logger
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 WEB_CONFIG_NAME = "web_config.json"
 RECORDS_TYPE = "WebSetting"
 FIELDS = [{"name": "setting_name", "type": "string"}, {"name": "setting_value", "type": "string"},

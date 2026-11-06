@@ -7,7 +7,7 @@ Description:     Menu wrapper for the Project Chunker CLI. Exports config/menu_s
                  Targets are chosen with a numbered folder browser - paths are never typed.
                  Commands: chunk+track, track, chunk, archive (chunk + verify + scoop the source), restore a
                  version, list versions, list registry, verify storage.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   e3edc3e9-786e-4845-be05-7a1c0e445d48
 """
@@ -43,7 +43,7 @@ from lib_bejson_Projects_logging import (  # noqa: E402
     projects_logging_get_logger,
 )
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 CLI_SCRIPT_ID = "project_chunker"
 _log = projects_logging_get_logger("menu")
 
@@ -57,9 +57,8 @@ COMMANDS = {
     "versions": ("List versions of a project", ["--versions"], False),
     "list": ("List registry", ["--list"], False),
     "verify": ("Verify storage", ["--verify"], False),
-    "intake-zip": ("Intake / convert a .zip archive (prompt for project name)", ["--prompt-name"], True),
 }
-MENU_ORDER = ["chunk-track", "track", "chunk", "scoop", "restore", "versions", "list", "verify", "intake-zip"]
+MENU_ORDER = ["chunk-track", "track", "chunk", "scoop", "restore", "versions", "list", "verify"]
 
 
 def _write(text: str) -> None:
@@ -209,11 +208,10 @@ def interactive(scripts: dict, args) -> int:
             continue
         target = None
         if COMMANDS[command_id][2]:
-            include_ext = ".zip" if command_id == "intake-zip" else None
-            target = projects_browser_pick_directory(browse_start, _read, _write, include_ext=include_ext)
+            target = projects_browser_pick_directory(browse_start, _read, _write)
             if target is None:
                 continue
-            browse_start = target.parent if target.is_file() else target
+            browse_start = target.parent
             _write(f"\ntarget: {target}\n")
             if command_id == "scoop" and not args.dry_run and not confirm(
                     "This verifies the archive and then REMOVES the verified source files. Continue?"):

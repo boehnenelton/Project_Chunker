@@ -9,7 +9,7 @@ Description:     Tracker detection, identity extraction and auto-generation for 
                  1.8.0: an explicit identity override (name / version / package) wins over the tracker and the folder
                  name, and the identity a zip's own file name carries (Name-V#-PKG#.zip) is exposed so the pipeline can
                  use it or at least flag a disagreement with the manifest.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   0ca0e561-017e-45fc-994c-d02ba3a97f2f
 """
@@ -19,13 +19,13 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from lib_bejson_Core_bejson_core import bejson_core_atomic_write, bejson_core_get_field_map
+from lib_bejson_Core_bejson_core import bejson_core_get_field_map
 from lib_bejson_Projects_logging import projects_logging_get_logger
 from lib_bejson_Projects_paths import projects_paths_sanitize_name
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 TRACKER_FILENAMES = ("bejson_project.json", ".bejson_project.json")
 DEFAULT_PROJECT_VERSION = "100"
 DEFAULT_PACKAGE_VERSION = "1"
@@ -41,11 +41,17 @@ DEFAULT_PROJECT_TYPES = (
 )
 ENV_PROJECT_TYPE_LEDGER = "PROJECT_TYPE_LEDGER"
 
+PROJECT_STATUS_DEVELOPMENT = "Development"
+PROJECT_STATUS_SHELVED = "Shelved"
 PROJECT_STATUS_ACTIVE = "Active"
 PROJECT_STATUS_INACTIVE = "Inactive"
 PROJECT_STATUS_ARCHIVED = "Archived"
 PROJECT_STATUS_LEGACY = "Legacy"
-VALID_PROJECT_STATUSES = (PROJECT_STATUS_ACTIVE, PROJECT_STATUS_INACTIVE, PROJECT_STATUS_ARCHIVED, PROJECT_STATUS_LEGACY)
+VALID_PROJECT_STATUSES = (
+    PROJECT_STATUS_DEVELOPMENT, PROJECT_STATUS_SHELVED,
+    PROJECT_STATUS_ACTIVE, PROJECT_STATUS_INACTIVE,
+    PROJECT_STATUS_ARCHIVED, PROJECT_STATUS_LEGACY
+)
 
 # Version/package pairs that mean "nobody ever set a real version": the chunker's own folder defaults and the
 # 1.0.0 / 100 a fresh project scaffold ships with. A tracker carrying one of these is not trusted over a zip file name.
@@ -172,8 +178,6 @@ def projects_tracker_filename_identity(file_name: str) -> Optional[Tuple[str, st
 
 # (project_name, project_version, package_version) -> previously issued Versioned_UUID or None
 UuidLookup = Callable[[str, str, str], Optional[str]]
-# (project_name) -> previously issued Project_GUID or None
-GuidLookup = Callable[[str], Optional[str]]
 
 
 @dataclass
@@ -188,7 +192,6 @@ class TrackerInfo:
     notes: list = field(default_factory=list)
     project_type: Optional[str] = None
     status: str = "Active"
-    project_guid: Optional[str] = None
 
 
 # First tracker file present in target_dir (current name wins over legacy), else None.
@@ -237,7 +240,7 @@ def _clean(value: Any) -> str:
 # Pulls identity values from a tracker document: top-level headers first, then the first Values row through the
 # field-map cache (no positional indices). Missing values come back as "".
 def projects_tracker_extract_identity(tracker_doc: Dict[str, Any]) -> Dict[str, str]:
-    keys = ("Project_Name", "Project_Version", "Package_Version", "Versioned_UUID", "Type", "Status", "Project_GUID")
+    keys = ("Project_Name", "Project_Version", "Package_Version", "Versioned_UUID", "Type", "Status")
     identity = {key: _clean(tracker_doc.get(key)) for key in keys}
     if not identity["Type"] and tracker_doc.get("Project_Type"):
         identity["Type"] = _clean(tracker_doc.get("Project_Type"))
@@ -254,13 +257,9 @@ def projects_tracker_extract_identity(tracker_doc: Dict[str, Any]) -> Dict[str, 
 
 # Detects the tracker in target_dir or builds one. A Versioned_UUID that is absent or not a real UUID (e.g. the
 # template placeholder) is replaced by a previously issued UUID for the same name+version (lookup) or a fresh uuid4.
-# A Project_GUID that is missing, empty or GUID_PLACEHOLDER is assigned from prior tracker db or freshly minted,
-# and stamped directly into the target project's tracker file on disk so the project can be tracked globally.
 def projects_tracker_detect_or_create(target_dir: Path,
                                       uuid_lookup: Optional[UuidLookup] = None,
-                                      override: Optional[IdentityOverride] = None,
-                                      guid_lookup: Optional[GuidLookup] = None,
-                                      stamp_tracker: bool = True) -> TrackerInfo:
+                                      override: Optional[IdentityOverride] = None) -> TrackerInfo:
     target_dir = Path(target_dir)
     folder_name, folder_ver, folder_pkg = projects_tracker_derive_from_folder(target_dir.name)
     override = override if override and override.active() else None
@@ -293,41 +292,13 @@ def projects_tracker_detect_or_create(target_dir: Path,
                 doc["Type"] = ptype
             if not doc.get("Status") and pstatus:
                 doc["Status"] = pstatus
-
-        # Resolve and assign persistent Project_GUID if not assigned.
-        # If a project has no UUID and its name matches an existing project, assign the existing project's UUID
-        # only if the name has more than 8 characters; otherwise generate a fresh UUID.
-        raw_guid = identity.get("Project_GUID", "")
-        valid_guid = _is_uuid(raw_guid) and str(raw_guid).strip() != GUID_PLACEHOLDER
-        if not valid_guid:
-            matched_guid = None
-            clean_name = name.strip()
-            if guid_lookup and len(clean_name) > 8:
-                matched_guid = guid_lookup(clean_name)
-            pguid = matched_guid if (matched_guid and _is_uuid(matched_guid)) else str(uuid.uuid4())
-            doc["Project_GUID"] = pguid
-            values = doc.get("Values")
-            if isinstance(values, list) and values and isinstance(values[0], list):
-                field_map = bejson_core_get_field_map(doc)
-                if "Project_GUID" in field_map and field_map["Project_GUID"] < len(values[0]):
-                    values[0][field_map["Project_GUID"]] = pguid
-            notes.append(f"assigned Project_GUID: {pguid}")
-            if stamp_tracker and tracker_path:
-                try:
-                    bejson_core_atomic_write(str(tracker_path), doc)
-                    notes.append(f"stamped Project_GUID into {Path(tracker_path).name}")
-                except Exception as exc:
-                    _log.warning("could not stamp tracker %s: %s", tracker_path, exc)
-        else:
-            pguid = str(raw_guid).strip()
-
         v_uuid = identity["Versioned_UUID"]
         if not _is_uuid(v_uuid):
             v_uuid = (uuid_lookup(name, pver, pkg) if uuid_lookup else None) or str(uuid.uuid4())
             notes.append("tracker had no valid Versioned_UUID; assigned one")
         doc["Versioned_UUID"] = v_uuid
         return TrackerInfo(name, pver, pkg, v_uuid, doc, "existing", str(tracker_path), notes,
-                           project_type=ptype, status=pstatus, project_guid=pguid)
+                           project_type=ptype, status=pstatus)
 
     if override:
         folder_name = projects_paths_sanitize_name(override.name) if override.name else folder_name
@@ -338,11 +309,6 @@ def projects_tracker_detect_or_create(target_dir: Path,
         gen_type = projects_tracker_detect_type(target_dir) or ""
         gen_status = PROJECT_STATUS_ACTIVE
 
-    matched_guid = None
-    clean_folder_name = folder_name.strip()
-    if guid_lookup and len(clean_folder_name) > 8:
-        matched_guid = guid_lookup(clean_folder_name)
-    pguid = matched_guid if (matched_guid and _is_uuid(matched_guid)) else GUID_PLACEHOLDER
     v_uuid = (uuid_lookup(folder_name, folder_ver, folder_pkg) if uuid_lookup else None) or str(uuid.uuid4())
     generated = {
         "Format": "BEJSON",
@@ -352,7 +318,7 @@ def projects_tracker_detect_or_create(target_dir: Path,
         "Project_Version": folder_ver,
         "Package_Version": folder_pkg,
         "Versioned_UUID": v_uuid,
-        "Project_GUID": pguid,
+        "Project_GUID": GUID_PLACEHOLDER,
         "Type": gen_type or None,
         "Status": gen_status,
         "Records_Type": ["RootPackage"],
@@ -364,6 +330,5 @@ def projects_tracker_detect_or_create(target_dir: Path,
         gen_notes.append(f"detected project type: {gen_type}")
     if override:
         gen_notes.append(f"identity overridden: {folder_name} V{folder_ver}-PKG{folder_pkg} type={gen_type} status={gen_status}")
-
     return TrackerInfo(folder_name, folder_ver, folder_pkg, v_uuid, generated, "generated", None, gen_notes,
-                       project_type=gen_type, status=gen_status, project_guid=pguid if pguid != GUID_PLACEHOLDER else None)
+                       project_type=gen_type, status=gen_status)

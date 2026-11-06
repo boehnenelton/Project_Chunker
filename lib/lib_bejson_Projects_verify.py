@@ -4,7 +4,7 @@ Relative Path:   lib/lib_bejson_Projects_verify.py
 Family:          Projects
 Description:     Read-only integrity audit of the three storage pillars: BEJSON validity of every database,
                  registry -> tracker file linkage, UUID presence, and per-file SHA-256 checks inside snapshots.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   1de05da5-798d-4160-a8e3-2a355c35b91d
 """
@@ -21,7 +21,7 @@ from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_nam
 from lib_bejson_Projects_registry import ProjectsRegistryError, projects_registry_list
 from lib_bejson_Projects_snapshot import ProjectsSnapshotError, projects_snapshot_iter_rows
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 
 
 @dataclass

@@ -8,7 +8,7 @@ Description:     The "active project" of the Project Chunker web UI: the one pro
                  server restarts, and is shared by every tab. Written atomically. Reading never raises: a missing,
                  unreadable or invalid file simply means "no active project". Whether the stored name still exists
                  in the registry is the caller's check (the registry, not this file, is the source of truth).
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   4b6e0d3a-7c1f-49a2-b8d5-2e9f1a6c7d40
 """
@@ -22,7 +22,7 @@ from lib_bejson_Core_bejson_core import bejson_core_atomic_write, bejson_core_ge
 from lib_bejson_Core_bejson_validator import validate_bejson
 from lib_bejson_Projects_logging import projects_logging_get_logger
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 ACTIVE_FILE_NAME = "active_project.json"
 RECORDS_TYPE = "ActiveProject"
 FIELDS = [{"name": "active_project", "type": "string"}, {"name": "set_at", "type": "string"}]

@@ -7,7 +7,7 @@ Description:     Zip intake for the chunker. Locks onto the zip (PID lock), conf
                  protection, then re-reads every extracted file from disk and compares size and CRC32 with the
                  archive's own records (no missing, no extra files). Chunking and deletion are the caller's job
                  (lib_bejson_Projects_pipeline.projects_pipeline_run_zip); this module never deletes the zip.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   46c8e14b-6d5b-41bb-b72c-4a3d4c6658e7
 """
@@ -30,7 +30,7 @@ from lib_bejson_Core_bejson_path_guard import bejson_safe_join
 from lib_bejson_Projects_logging import projects_logging_get_logger
 from lib_bejson_Projects_paths import projects_paths_sanitize_name
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 ZIP_MAGICS = (b"PK\x03\x04", b"PK\x05\x06")       # local file header / empty archive
 DEFAULT_MAX_ENTRIES = 100_000
 DEFAULT_MAX_TOTAL_BYTES = 4 * 1024 ** 3             # uncompressed, declared

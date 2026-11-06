@@ -4,7 +4,7 @@ File Name:       __init__.py
 Relative Path:   Web/chunker_web/__init__.py
 Description:     App factory for the unified Project Chunker web app. Localhost only: Host-header check, per-process
                  token on every state-changing request, JSON errors, no-store caching, security headers.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   4a21562e-14ff-49aa-8bdd-b5373abd0360
 """
@@ -32,7 +32,7 @@ from .core import ApiError, Ctx
 from .jobs import JobRunner
 from .pages import register_pages
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 LIB_ERRORS = (ProjectsArchiveError, ProjectsFiltersError, ProjectsMigrateError, ProjectsPathError,
               ProjectsPipelineError, ProjectsRegistryError, ProjectsSnapshotError, ProjectsViewError, ProjectsZipError)
 _log = projects_logging_get_logger("web")

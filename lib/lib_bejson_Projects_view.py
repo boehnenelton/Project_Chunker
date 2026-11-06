@@ -5,7 +5,7 @@ Family:          Projects
 Description:     Read-only view model for project management front ends. Groups registry rows by project and
                  enriches each version with facts from its snapshot header (file count, size, date, Binary_Enabled).
                  Never writes; a missing or unreadable snapshot yields a card with the problem noted, not an error.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   9c739f19-9533-4062-ba7d-f5172e23bcb6
 """
@@ -17,7 +17,6 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from lib_bejson_Core_bejson_core import bejson_core_get_field_map, bejson_core_load_file
 from lib_bejson_Projects_logging import projects_logging_get_logger
 from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_name
 from lib_bejson_Projects_pipeline import _find_snapshot
@@ -29,7 +28,7 @@ from lib_bejson_Projects_snapshot import (
     projects_snapshot_parse_time,
 )
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _FACTS_CACHE: Dict[tuple, Dict[str, Any]] = {}      # (path, mtime_ns, size) -> facts; a rewritten snapshot misses the cache
 _FACTS_CACHE_MAX = 512
 _log = projects_logging_get_logger("view")
@@ -68,7 +67,7 @@ def _sort_key(card: Dict[str, Any]):
     return (num(card["Project_Version"]), num(card["Package_Version"]), card["Updated_At"])
 
 
-# [{name, version_count, latest_status, versions:[card,...]}] sorted by project name; versions newest first.
+# [{name, version_count, latest_status, type, versions:[card,...]}] sorted by project name; versions newest first.
 def projects_view_build(layout: StorageLayout) -> List[Dict[str, Any]]:
     grouped: Dict[str, List[Dict[str, Any]]] = {}
     for row in projects_registry_list(layout):
@@ -80,26 +79,20 @@ def projects_view_build(layout: StorageLayout) -> List[Dict[str, Any]]:
     projects = []
     for name in sorted(grouped, key=str.lower):
         cards = sorted(grouped[name], key=_sort_key, reverse=True)
-        # Enrich cards and project with Project_GUID from tracker database
-        pguid = None
-        db_path = layout.tracker_db(projects_paths_sanitize_name(name))
-        if db_path.exists():
-            tdoc = bejson_core_load_file(str(db_path))
-            if tdoc and isinstance(tdoc.get("Values"), list):
-                fm = bejson_core_get_field_map(tdoc)
-                if "Tracker_Data" in fm:
-                    for r in reversed(tdoc["Values"]):
-                        try:
-                            d = json.loads(r[fm["Tracker_Data"]])
-                            if d.get("Project_GUID") and str(d["Project_GUID"]).strip() != "GUID_PLACEHOLDER":
-                                pguid = str(d["Project_GUID"]).strip()
-                                break
-                        except Exception:
-                            continue
+        latest_type = ""
         for c in cards:
-            c["Project_GUID"] = pguid or ""
-        projects.append({"name": name, "version_count": len(cards), "latest_status": cards[0]["Status"],
-                         "Project_GUID": pguid or "", "versions": cards})
+            if c.get("Type"):
+                latest_type = c["Type"]
+                break
+        projects.append({
+            "name": name,
+            "version_count": len(cards),
+            "latest_status": cards[0]["Status"],
+            "latest_type": latest_type,
+            "type": latest_type,
+            "Type": latest_type,
+            "versions": cards,
+        })
     return projects
 
 

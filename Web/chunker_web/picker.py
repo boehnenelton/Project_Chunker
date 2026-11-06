@@ -3,7 +3,7 @@
 File Name:       picker.py
 Relative Path:   Web/chunker_web/picker.py
 Description:     Server-side folder/file picker confined to the configured roots (no typed paths needed).
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   1d9f0440-b3cd-4a49-bbed-68dc929e93dd
 """
@@ -12,7 +12,7 @@ from typing import Any, Dict
 
 from .core import ApiError, Ctx
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 MAX_ENTRIES = 500
 
 

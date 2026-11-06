@@ -5,7 +5,7 @@ Relative Path:   Web/chunker_web/api_work.py
 Description:     Action endpoints of the web app: previews (read-only dry runs that mint a plan_id), live runs as
                  background jobs (track, chunk, scoop, zip intake, restore, verify, migrator) and job polling.
                  Destructive runs need a matching plan_id plus typed confirmations.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   62de16a9-d11b-4082-a71d-4d0bef061cb7
 """
@@ -46,7 +46,7 @@ from .core import (
 )
 from .jobs import JobRunner
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 RUN_OPS = ("track", "chunk", "scoop")
 
 

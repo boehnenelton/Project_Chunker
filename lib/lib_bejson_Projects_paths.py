@@ -6,7 +6,7 @@ Description:     Project-root and storage-layout resolution plus filesystem-safe
                  Nothing is hardcoded: roots resolve from the calling script's location, an explicit
                  override, or the PROJECT_CHUNKER_STORAGE_ROOT environment variable. Tracked chunks and
                  untracked chunks have separate folders; every chunk file name is prefixed with its project name.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   c29898b5-8c51-4bdc-a00a-5ef4016c5a0b
 """
@@ -19,7 +19,7 @@ from typing import Optional, Union
 
 from lib_bejson_Core_bejson_path_guard import bejson_safe_join
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 ENV_STORAGE_ROOT = "PROJECT_CHUNKER_STORAGE_ROOT"
 DEFAULT_STORAGE_DIRNAME = "storage"
 UNTRACKED_DIRNAME = "untracked_chunks"
@@ -61,6 +61,18 @@ class StorageLayout:
     @property
     def snapshots_dir(self) -> Path:
         return self.storage_root / "project_snapshots"
+
+    @property
+    def backups_dir(self) -> Path:
+        return self.storage_root / "backups" / "data"
+
+    @property
+    def backups_manifest_file(self) -> Path:
+        return self.storage_root / "backups" / "104a.mfdb.bejson"
+
+    @property
+    def backups_registry_file(self) -> Path:
+        return self.backups_dir / "backups_registry.104a.bejson"
 
     @property
     def registry_file(self) -> Path:

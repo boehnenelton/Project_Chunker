@@ -6,13 +6,12 @@ Description:     Orchestration of the track / chunk / scoop jobs and of restore.
                  call this; it owns ordering (detect -> register -> snapshot -> re-verify -> scoop) and mode
                  rules, nothing else. Scoop only ever runs on a snapshot that was reloaded from disk and
                  matched against the source.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   d653b09d-b29e-4ec8-aebb-7ed7936f1609
 """
 
 from dataclasses import dataclass, field
-import json
 from pathlib import Path
 from typing import Callable, Optional, Tuple
 
@@ -28,7 +27,7 @@ from lib_bejson_Projects_archive import (
 )
 from lib_bejson_Projects_config import projects_config_binary_enabled
 from lib_bejson_Projects_logging import projects_logging_get_logger
-from lib_bejson_Core_bejson_core import bejson_core_get_field_map, bejson_core_load_file
+from lib_bejson_Core_bejson_core import bejson_core_load_file
 from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_name
 from lib_bejson_Projects_registry import (
     STATUS_ARCHIVED,
@@ -36,8 +35,8 @@ from lib_bejson_Projects_registry import (
     STATUS_RESTORED,
     projects_registry_find_uuid,
     projects_registry_get,
+    projects_registry_get_official_path,
     projects_registry_has_uuid,
-    projects_registry_list,
     projects_registry_register,
     projects_registry_update,
 )
@@ -55,17 +54,12 @@ from lib_bejson_Projects_snapshot import (
     projects_snapshot_write,
 )
 from lib_bejson_Projects_tracker import (
-    GUID_PLACEHOLDER,
     IdentityOverride,
     ProjectsTrackerError,
     TrackerInfo,
-    _is_uuid,
     projects_tracker_detect_or_create,
-    projects_tracker_extract_identity,
     projects_tracker_filename_identity,
-    projects_tracker_find_file,
     projects_tracker_is_scaffold_default,
-    projects_tracker_read_file,
 )
 from lib_bejson_Projects_zip import (
     ProjectsZipError,
@@ -76,7 +70,7 @@ from lib_bejson_Projects_zip import (
     projects_zip_stage,
 )
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _log = projects_logging_get_logger("pipeline")
 
 
@@ -99,6 +93,7 @@ class RunOptions:
     filter_binary: Optional[bool] = None        # binary_enabled switch from config/chunker_filters.json
     config_file: Optional[Path] = None          # legacy config.json (deprecated Binary_Enabled header fallback)
     original_path: Optional[Path] = None        # location recorded as Original_Path (default: target); zip intake sets it
+    official_path: Optional[str] = None         # canonical repo path recorded as Official_Path in master registry
     extra_headers: Optional[dict] = None        # extra snapshot headers (zip provenance)
     keep_zip: bool = False                      # zip mode: never delete the zip
     delete_filtered_keep: Tuple[str, ...] = ()  # filter-matched top-level paths to keep even with delete_filtered
@@ -159,8 +154,7 @@ ON_CONFLICT_CHOICES = ("backup", "refuse")
 # Zip intake only: the zip's file name may carry an identity (Name-V230-PKG7.zip) that the manifest inside disagrees
 # with (a scaffold manifest still says 1.0.0/100; a zip with no tracker gets the folder defaults). Returns the
 # (possibly re-resolved) TrackerInfo and appends a plain-language warning when a disagreement is left in place.
-def _apply_filename_identity(options: RunOptions, info: TrackerInfo, target: Path, lookup, warnings: list,
-                            guid_lookup=None, stamp_tracker: bool = True) -> TrackerInfo:
+def _apply_filename_identity(options: RunOptions, info: TrackerInfo, target: Path, lookup, warnings: list) -> TrackerInfo:
     fn = options.filename_identity
     if not fn:
         return info
@@ -173,8 +167,7 @@ def _apply_filename_identity(options: RunOptions, info: TrackerInfo, target: Pat
     untrusted = info.source == "generated" or projects_tracker_is_scaffold_default(info.project_version, info.package_version)
     if untrusted and options.identity_from_filename:
         override = IdentityOverride(name=options.identity.name if options.identity else "", version=fn_ver, package=fn_pkg)
-        resolved = projects_tracker_detect_or_create(target, uuid_lookup=lookup, override=override,
-                                                    guid_lookup=guid_lookup, stamp_tracker=stamp_tracker)
+        resolved = projects_tracker_detect_or_create(target, uuid_lookup=lookup, override=override)
         resolved.notes.append("identity taken from the zip file name")
         return resolved
     reason = "no tracker" if info.source == "generated" else ("scaffold-default tracker" if untrusted else "tracker values")
@@ -225,116 +218,36 @@ def projects_pipeline_run(layout: StorageLayout, options: RunOptions) -> RunResu
         except ProjectsArchiveError as exc:
             raise ProjectsPipelineError(str(exc)) from exc
 
-    # Guard: refuse to track or chunk if target is a subdirectory of a tracked project
-    target_resolved = target.resolve()
-    for parent in target_resolved.parents:
-        if parent == target_resolved:
-            continue
-        parent_tracker = projects_tracker_find_file(parent)
-        if parent_tracker:
-            raise ProjectsPipelineError(
-                f"refusing to track '{target}': it is a subdirectory of project at '{parent}' (tracker: {parent_tracker.name})")
-
-    for reg_entry in projects_registry_list(layout):
-        orig = reg_entry.get("Original_Path")
-        if orig:
-            try:
-                orig_path = Path(orig).resolve()
-                if orig_path != target_resolved and orig_path in target_resolved.parents:
-                    raise ProjectsPipelineError(
-                        f"refusing to track '{target}': it is a subdirectory of tracked project '{reg_entry.get('Project_Name')}' at '{orig}'")
-            except (OSError, ValueError):
-                continue
-
     def lookup(name: str, pver: str, pkg: str) -> Optional[str]:
         return projects_registry_find_uuid(layout, name, pver, pkg)
 
-    def guid_lookup(name: str) -> Optional[str]:
-        # If a project has no UUID and its name matches an existing project,
-        # it assigns the UUID of the project with the same name ONLY IF more than 8 characters.
-        if not name or len(name.strip()) <= 8:
-            return None
-        clean_name = name.strip()
-        sanitized = projects_paths_sanitize_name(clean_name)
-        if len(sanitized) <= 8:
-            return None
-
-        # 1. Check tracker database (direct or case-insensitive match)
-        db_path = layout.tracker_db(sanitized)
-        if not db_path.exists() and layout.trackers_dir.exists():
-            sanitized_lower = sanitized.lower()
-            for candidate in layout.trackers_dir.glob("*.bejson"):
-                if candidate.stem.lower() == sanitized_lower:
-                    db_path = candidate
-                    break
-
-        if db_path.exists():
-            doc = bejson_core_load_file(str(db_path))
-            if doc and isinstance(doc.get("Values"), list):
-                field_map = bejson_core_get_field_map(doc)
-                if "Tracker_Data" in field_map:
-                    for row in reversed(doc["Values"]):
-                        try:
-                            data = json.loads(row[field_map["Tracker_Data"]])
-                        except (ValueError, TypeError, IndexError):
-                            continue
-                        pguid = data.get("Project_GUID")
-                        if _is_uuid(pguid) and str(pguid).strip() != GUID_PLACEHOLDER:
-                            return str(pguid).strip()
-
-        # 2. Check master registry entries for matching project name
-        for reg_entry in projects_registry_list(layout):
-            reg_name = reg_entry.get("Project_Name", "")
-            if reg_name.lower() == clean_name.lower() or projects_paths_sanitize_name(reg_name).lower() == sanitized.lower():
-                t_rel = reg_entry.get("Tracker_File")
-                if t_rel:
-                    t_path = layout.storage_root / t_rel if not Path(t_rel).is_absolute() else Path(t_rel)
-                    if not t_path.exists():
-                        t_path = layout.storage_root.parent / t_rel
-                    if t_path.exists() and t_path != db_path:
-                        tdoc = bejson_core_load_file(str(t_path))
-                        if tdoc and isinstance(tdoc.get("Values"), list):
-                            tf_map = bejson_core_get_field_map(tdoc)
-                            if "Tracker_Data" in tf_map:
-                                for r in reversed(tdoc["Values"]):
-                                    try:
-                                        d = json.loads(r[tf_map["Tracker_Data"]])
-                                    except Exception:
-                                        continue
-                                    pg = d.get("Project_GUID")
-                                    if _is_uuid(pg) and str(pg).strip() != GUID_PLACEHOLDER:
-                                        return str(pg).strip()
-                orig = reg_entry.get("Original_Path")
-                if orig:
-                    try:
-                        orig_p = Path(orig)
-                        if orig_p.exists():
-                            orig_tracker = projects_tracker_find_file(orig_p)
-                            if orig_tracker:
-                                orig_doc = projects_tracker_read_file(orig_tracker)
-                                if orig_doc:
-                                    orig_id = projects_tracker_extract_identity(orig_doc)
-                                    oguid = orig_id.get("Project_GUID")
-                                    if _is_uuid(oguid) and str(oguid).strip() != GUID_PLACEHOLDER:
-                                        return str(oguid).strip()
-                    except Exception:
-                        pass
-        return None
-
-    stamp = not options.dry_run
     early_warnings: list = []
     try:
-        info = projects_tracker_detect_or_create(target, uuid_lookup=lookup, override=options.identity,
-                                                guid_lookup=guid_lookup, stamp_tracker=stamp)
+        info = projects_tracker_detect_or_create(target, uuid_lookup=lookup, override=options.identity)
     except ProjectsTrackerError as exc:
         raise ProjectsPipelineError(str(exc)) from exc
-    info = _apply_filename_identity(options, info, target, lookup, early_warnings,
-                                    guid_lookup=guid_lookup, stamp_tracker=stamp)
+    info = _apply_filename_identity(options, info, target, lookup, early_warnings)
     _log.info("%s %s V%s-PKG%s uuid=%s (%s tracker)", mode, info.project_name, info.project_version,
               info.package_version, info.versioned_uuid, info.source)
     result = RunResult(info=info, mode=mode, dry_run=options.dry_run, warnings=early_warnings)
     _emit(options, stage="track", label=f"{info.project_name} V{info.project_version}-PKG{info.package_version} ({info.source} tracker)")
     recorded_original = Path(options.original_path) if options.original_path else target
+
+    # Check for dual-repo drift against registered Official_Path in master registry
+    existing_official = projects_registry_get_official_path(layout, info.project_name)
+    if existing_official:
+        try:
+            is_diff = Path(recorded_original).resolve() != Path(existing_official).resolve()
+        except Exception:
+            is_diff = str(recorded_original) != str(existing_official)
+        if is_diff:
+            warning_msg = (
+                f"DUAL REPO ALERT: Target '{recorded_original}' does NOT match the official repository path "
+                f"registered in Project Chunker ('{existing_official}'). "
+                f"Ensure you are editing the canonical repo!"
+            )
+            result.warnings.append(warning_msg)
+            _log.warning(warning_msg)
 
     conflicts: list = []
     if chunk:
@@ -383,7 +296,8 @@ def projects_pipeline_run(layout: StorageLayout, options: RunOptions) -> RunResu
                                    "snapshot would be kept in superseded/")
 
     if track and not options.dry_run:
-        result.tracker_db, result.registry_file = projects_registry_register(layout, info, original_path=recorded_original)
+        result.tracker_db, result.registry_file = projects_registry_register(
+            layout, info, original_path=recorded_original, official_path=options.official_path)
         result.registered = True
 
     if chunk:

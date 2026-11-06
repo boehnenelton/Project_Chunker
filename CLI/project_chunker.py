@@ -7,7 +7,7 @@ Description:     Project Chunker & Tracker CLI. Thin front end: parses flags, wi
                  master registry, per-project snapshot chunks. All logic lives in lib/.
                  Modes: --track, --chunk, or both; --scoop (chunk, re-verify, then remove the source files);
                  --restore (deploy a version to its original or another location); --list, --versions, --verify.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   97a401bf-03f3-4ff7-a327-4defc16c6a38
 """
@@ -35,6 +35,14 @@ from lib_bejson_Projects_logging import (  # noqa: E402
 )
 from lib_bejson_Projects_paths import projects_paths_resolve_storage_layout  # noqa: E402
 from lib_bejson_Projects_archive import ProjectsArchiveError  # noqa: E402
+from lib_bejson_Projects_backup import (  # noqa: E402
+    ProjectsBackupError,
+    projects_backup_create,
+    projects_backup_export,
+    projects_backup_import,
+    projects_backup_list,
+    projects_backup_restore,
+)
 from lib_bejson_Projects_filters import (  # noqa: E402
     FILTERS_CONFIG_NAME,
     ProjectsFiltersError,
@@ -50,7 +58,9 @@ from lib_bejson_Projects_pipeline import (  # noqa: E402
 )
 from lib_bejson_Projects_registry import (  # noqa: E402
     ProjectsRegistryError,
+    projects_registry_get_official_path,
     projects_registry_list,
+    projects_registry_set_official_path,
     projects_registry_versions,
 )
 from lib_bejson_Projects_snapshot import (  # noqa: E402
@@ -60,7 +70,7 @@ from lib_bejson_Projects_snapshot import (  # noqa: E402
 from lib_bejson_Projects_tracker import IdentityOverride  # noqa: E402
 from lib_bejson_Projects_verify import projects_verify_storage  # noqa: E402
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 EXIT_OK, EXIT_FAIL, EXIT_USAGE = 0, 1, 2
 _log = projects_logging_get_logger("cli")
 
@@ -108,6 +118,10 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="update Project_Version for an existing registered project UUID (manual version definition)")
     parser.add_argument("--set-pkg", metavar="PKG",
                         help="update Package_Version for an existing registered project UUID (manual pkg definition)")
+    parser.add_argument("--set-official-path", metavar="PATH",
+                        help="set/update the canonical Official_Path in the master registry for a project (by UUID or project name)")
+    parser.add_argument("--official-path", metavar="PATH",
+                        help="with --track: explicitly register this target with a specified canonical Official_Path in the master registry")
     parser.add_argument("--identity-from-filename", action="store_true",
                         help="zip intake: take V#-PKG# from the zip's file name (Name-V230-PKG7.zip) when the tracker "
                              "inside is missing or only carries scaffold defaults (1.0.0/100, 100/1)")
@@ -152,6 +166,18 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="skip files larger than this many MB; 0 disables (default: %(default)s)")
     parser.add_argument("--log-level", default="INFO", choices=VALID_LEVELS, type=str.upper)
     parser.add_argument("--json", action="store_true", dest="as_json", help="emit machine-readable JSON on stdout")
+    parser.add_argument("--system-backup", action="store_true",
+                        help="create a full compressed system backup (.zip) in backup storage and register in 4th storage MFDB")
+    parser.add_argument("--system-restore", metavar="ZIP_PATH",
+                        help="restore full system from a backup .zip archive")
+    parser.add_argument("--export-data", metavar="EXPORT_DIR_OR_ZIP",
+                        help="export storage and config data to a standalone archive")
+    parser.add_argument("--import-data", metavar="IMPORT_ZIP",
+                        help="import and restore storage data from an exported archive")
+    parser.add_argument("--list-backups", action="store_true",
+                        help="list registered backups in the 4th storage MFDB pillar")
+    parser.add_argument("--backup-dir", metavar="DIR",
+                        help="custom backup destination directory")
     parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     return parser
 
@@ -163,7 +189,7 @@ def _emit(payload: dict, as_json: bool, lines: list) -> None:
 def _cmd_list(layout, as_json: bool, filter_type: Optional[str] = None, filter_status: Optional[str] = None) -> int:
     rows = projects_registry_list(layout, project_type=filter_type, status=filter_status)
     _emit({"registry": rows}, as_json,
-          [f"{r['Versioned_UUID']}  {r['Project_Name']:<20}  type={r.get('Type') or '-':<10}  status={r.get('Status') or '-':<9}  {r['Tracker_File']}" for r in rows]
+          [f"{r['Versioned_UUID']}  {r['Project_Name']:<18}  type={r.get('Type') or '-':<8}  status={r.get('Status') or '-':<8}  official={r.get('Official_Path') or '-'}  {r['Tracker_File']}" for r in rows]
           or ["registry is empty" if not (filter_type or filter_status) else f"no entries match filter (type={filter_type}, status={filter_status})"])
     return EXIT_OK
 
@@ -171,8 +197,8 @@ def _cmd_list(layout, as_json: bool, filter_type: Optional[str] = None, filter_s
 def _cmd_versions(layout, project: str, as_json: bool, filter_type: Optional[str] = None, filter_status: Optional[str] = None) -> int:
     rows = projects_registry_versions(layout, project, project_type=filter_type, status=filter_status)
     _emit({"versions": rows}, as_json,
-          [f"V{r['Project_Version']}-PKG{r['Package_Version']}  type={r.get('Type') or '-':<10}  {r['Status']:<9}  {r['Versioned_UUID']}  "
-           f"{r['Original_Path'] or '-'}" for r in rows] or [f"no versions registered for {project}"])
+          [f"V{r['Project_Version']}-PKG{r['Package_Version']}  type={r.get('Type') or '-':<8}  {r['Status']:<8}  {r['Versioned_UUID']}  "
+           f"official={r.get('Official_Path') or '-'}  {r['Original_Path'] or '-'}" for r in rows] or [f"no versions registered for {project}"])
     return EXIT_OK if rows else EXIT_FAIL
 
 
@@ -282,7 +308,8 @@ def _cmd_run_one(layout, args, target_path: Path, filters) -> int:
     common = dict(binary_enabled=args.binary_enabled, filter_binary=filters.binary_enabled,
                   config_file=PROJECT_ROOT / "config" / "config.json",
                   extensions=tuple(args.ext) if args.ext else None,
-                  max_file_bytes=int(args.max_file_mb * 1024 * 1024), on_conflict=args.on_conflict)
+                  max_file_bytes=int(args.max_file_mb * 1024 * 1024), on_conflict=args.on_conflict,
+                  official_path=args.official_path)
     current_name = args.project_name or ""
     if args.prompt_name:
         if target_path.is_file():
@@ -411,11 +438,14 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     projects_logging_configure(args.log_level)
 
-    needs_target = args.track or args.chunk or args.scoop or args.set_status or args.set_type or args.set_version or args.set_pkg or args.prompt_name
+    is_backup_op = args.system_backup or args.system_restore or args.export_data or args.import_data or args.list_backups
+    needs_target = (args.track or args.chunk or args.scoop or args.set_status or args.set_type
+                    or args.set_version or args.set_pkg or args.set_official_path or args.prompt_name)
     if not (needs_target or args.list_registry or args.verify or args.restore or args.versions
-            or args.list_filters):
+            or args.list_filters or is_backup_op):
         parser.error("choose at least one of --track, --chunk, --scoop, --restore, --versions, --list, --verify, "
-                     "--list-filters, --set-status, --set-type, --set-version, --set-pkg")
+                     "--system-backup, --system-restore, --export-data, --import-data, --list-backups, --list-filters, "
+                     "--set-status, --set-type, --set-version, --set-pkg, --set-official-path")
     if needs_target and not args.target:
         parser.error("a target directory or UUID is required with --track/--chunk/--scoop/--set-* commands")
     if args.restore and (args.track or args.chunk or args.scoop):
@@ -437,6 +467,41 @@ def main(argv=None) -> int:
 
     layout = projects_paths_resolve_storage_layout(PROJECT_ROOT, args.storage_root)
     try:
+        if args.system_backup:
+            dest_zip, sha, sz = projects_backup_create(PROJECT_ROOT, backup_dir=args.backup_dir)
+            _emit({"status": "ok", "action": "system_backup", "path": str(dest_zip), "sha256": sha, "size_bytes": sz},
+                  args.as_json,
+                  [f"[backup] system backup created: {dest_zip}", f"size     : {sz} bytes", f"sha256   : {sha}"])
+            return EXIT_OK
+        if args.system_restore:
+            res = projects_backup_restore(Path(args.system_restore), PROJECT_ROOT)
+            _emit({"status": "ok", "action": "system_restore", "restored": res["restored_count"], "archive": res["backup_file"]},
+                  args.as_json,
+                  [f"[restore] system restore complete: {res['restored_count']} files restored from {res['backup_file']}"])
+            return EXIT_OK
+        if args.export_data:
+            dest = projects_backup_export(PROJECT_ROOT, Path(args.export_data))
+            _emit({"status": "ok", "action": "export_data", "archive": str(dest)},
+                  args.as_json,
+                  [f"[export] exported project data to: {dest}"])
+            return EXIT_OK
+        if args.import_data:
+            res = projects_backup_import(Path(args.import_data), PROJECT_ROOT)
+            _emit({"status": "ok", "action": "import_data", "restored": res["restored_count"], "archive": res["backup_file"]},
+                  args.as_json,
+                  [f"[import] imported {res['restored_count']} files from {res['backup_file']}"])
+            return EXIT_OK
+        if args.list_backups:
+            backups = projects_backup_list(PROJECT_ROOT)
+            lines = [f"{b.get('Backup_ID', ''):<30} {b.get('Backup_Filename', ''):<45} {b.get('Created_At', ''):<22} size={b.get('File_Size_Bytes', 0)} files={b.get('File_Count', 0)}" for b in backups]
+            _emit({"status": "ok", "backups": backups}, args.as_json, lines or ["No backups found in 4th storage MFDB pillar."])
+            return EXIT_OK
+        if args.set_official_path:
+            count = projects_registry_set_official_path(layout, args.target, args.set_official_path)
+            _emit({"updated": True, "target": args.target, "official_path": args.set_official_path, "count": count},
+                  args.as_json,
+                  [f"[official-path] set Official_Path to '{args.set_official_path}' for '{args.target}' ({count} row(s) updated)"])
+            return EXIT_OK
         if args.set_status or args.set_type or args.set_version or args.set_pkg:
             return _cmd_update_entry(layout, args.target, status=args.set_status, ptype=args.set_type,
                                      version=args.set_version, pkg=args.set_pkg, as_json=args.as_json)
@@ -451,7 +516,7 @@ def main(argv=None) -> int:
         if args.restore:
             return _cmd_restore(layout, args)
         return _cmd_run(layout, args)
-    except (ProjectsPipelineError, ProjectsFiltersError, ProjectsRegistryError, ProjectsSnapshotError, ProjectsArchiveError, OSError) as exc:
+    except (ProjectsPipelineError, ProjectsFiltersError, ProjectsRegistryError, ProjectsSnapshotError, ProjectsArchiveError, ProjectsBackupError, OSError) as exc:
         _log.error("%s", exc)
         return EXIT_FAIL
 

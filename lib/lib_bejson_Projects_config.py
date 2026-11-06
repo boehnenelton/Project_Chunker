@@ -6,7 +6,7 @@ Description:     Menu configuration export/load. Discovers the project's runnabl
                  writes config/menu_scripts.json (BEJSON 104a): each script's location relative to the project
                  root and relative to the menu, so the menu can locate and wrap the CLI wherever the project
                  folder lives. Also writes the standard config/config.json when absent.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   074d81dc-7418-48fe-a27f-1466b55e8ff0
 """
@@ -26,7 +26,7 @@ from lib_bejson_Core_bejson_path_guard import bejson_safe_join
 from lib_bejson_Core_bejson_validator import validate_bejson
 from lib_bejson_Projects_logging import projects_logging_get_logger
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 BINARY_KEY = "Binary_Enabled"
 SCRIPTS_CONFIG_NAME = "menu_scripts.json"
 STANDARD_CONFIG_NAME = "config.json"

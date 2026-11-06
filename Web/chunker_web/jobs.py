@@ -5,7 +5,7 @@ Relative Path:   Web/chunker_web/jobs.py
 Description:     Single-slot background job runner for the web app: one live job at a time, progress events for
                  polling, optional cancel (only honoured by jobs that check it), and a BEJSON 104a journal of
                  finished jobs under data/.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   b07d7ddc-2a5e-4b84-9270-0cfb76348acf
 """
@@ -21,7 +21,7 @@ from lib_bejson_Core_bejson_core import bejson_core_atomic_write, bejson_core_ge
 from lib_bejson_Core_bejson_validator import validate_bejson
 from lib_bejson_Projects_logging import projects_logging_get_logger
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 RECORDS_TYPE = "WebJob"
 FIELDS = [{"name": n, "type": "string"} for n in
           ("job_id", "op", "label", "state", "started", "finished", "summary", "error")]

@@ -4,7 +4,7 @@ File Name:       api_data.py
 Relative Path:   Web/chunker_web/api_data.py
 Description:     Read/config endpoints of the web app: meta, dashboard, folder picker, projects and their files,
                  version export/download, the filter editor, settings and the migrator configuration/plan/ledger.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   6b0731fa-a823-417d-ad91-2967e05e5cee
 """
@@ -50,7 +50,7 @@ from .core import ApiError, Ctx
 from .jobs import JobRunner
 from .picker import picker_list
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 UUID_RE = re.compile(r"^[0-9a-fA-F-]{8,36}$")
 
 
@@ -98,9 +98,35 @@ def register_data(app, ctx: Ctx, jobs: JobRunner, version: str) -> None:
     # ── projects ────────────────────────────────────────────────────────────────────────────────────────
     @app.get("/api/projects")
     def api_projects():
-        projects = projects_view_build(ctx.layout)
-        return jsonify({"ok": True, "projects": projects,
-                        "active": (active_resolve(ctx, projects)["active"] or {}).get("name")})
+        all_projects = projects_view_build(ctx.layout)
+        types_set = set()
+        statuses_set = set()
+        for p in all_projects:
+            t = (p.get("type") or "").strip()
+            if t:
+                types_set.add(t)
+            s = (p.get("latest_status") or "").strip()
+            if s:
+                statuses_set.add(s)
+        available_types = sorted(types_set, key=str.lower)
+        available_statuses = sorted(statuses_set, key=str.lower)
+        type_filter = request.args.get("type", "").strip().lower()
+        status_filter = request.args.get("status", "").strip().lower()
+        projects = all_projects
+        if type_filter:
+            if type_filter in ("__none__", "none", "untagged"):
+                projects = [p for p in projects if not (p.get("type") or "").strip()]
+            else:
+                projects = [p for p in projects if (p.get("type") or "").strip().lower() == type_filter]
+        if status_filter:
+            projects = [p for p in projects if (p.get("latest_status") or "").strip().lower() == status_filter]
+        return jsonify({
+            "ok": True,
+            "projects": projects,
+            "types": available_types,
+            "statuses": available_statuses,
+            "active": (active_resolve(ctx, all_projects)["active"] or {}).get("name"),
+        })
 
     @app.get("/api/projects/<name>/tracker")
     def api_tracker_details(name):

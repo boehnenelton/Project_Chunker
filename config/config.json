@@ -34,6 +34,11 @@
       "log_level",
       "INFO",
       "Default logging module threshold."
+    ],
+    [
+      "backup_storage_path",
+      "/storage/emulated/0/Admin/Core/Backups/ProChunkBK/",
+      "Configured archive backup path for Project Chunker snapshots, trackers, and registry."
     ]
   ]
 }

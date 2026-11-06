@@ -4,7 +4,7 @@ Relative Path:   lib/lib_bejson_Projects_logging.py
 Family:          Projects
 Description:     Shared logging setup for every Projects-family tool (CLI and menu). Wraps the standard
                  logging module; no print() logging anywhere in the family.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   cd882d4e-fc7b-4cba-a6f5-69266f031643
 """
@@ -12,7 +12,7 @@ RELATIONAL_ID:   cd882d4e-fc7b-4cba-a6f5-69266f031643
 import logging
 import sys
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 LOGGER_NAME = "project_chunker"
 VALID_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 _LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"

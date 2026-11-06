@@ -7,7 +7,7 @@ Description:     Flask UI for the Project DB Migrator (BECSS Switch Core styling
                  radio boxes for choices, check boxes for phase selection and confirmation. Logic lives in
                  lib_bejson_Projects_migrate; this file serves it, runs one background job at a time, and requires
                  an explicit confirmation for live runs. Localhost only; every state-changing call needs the page token.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   2c1dfe5c-ce19-44d9-9e59-c7b6b957544e
 """
@@ -49,7 +49,7 @@ from lib_bejson_Projects_migrate import (  # noqa: E402
 )
 from lib_bejson_Projects_paths import projects_paths_resolve_storage_layout  # noqa: E402
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "migrator_config.json"
 CHUNKER_CONFIG = PROJECT_ROOT / "config" / "config.json"
 PHASES = ("chunk", "verify")

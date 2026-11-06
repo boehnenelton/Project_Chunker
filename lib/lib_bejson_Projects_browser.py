@@ -4,7 +4,7 @@ Relative Path:   lib/lib_bejson_Projects_browser.py
 Family:          Projects
 Description:     Numbered, keyboard-driven directory picker so no tool ever asks the user to type a path.
                  I/O is injected (read_choice / write) which keeps it testable and front-end agnostic.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   cbd90153-123a-4f0a-995f-3e30d54b8007
 """
@@ -12,7 +12,7 @@ RELATIONAL_ID:   cbd90153-123a-4f0a-995f-3e30d54b8007
 from pathlib import Path
 from typing import Callable, List, Optional
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 PAGE_SIZE = 15
 
 

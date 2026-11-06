@@ -12,7 +12,7 @@ Description:     Directory -> snapshot chunk. Walks a project deterministically 
                  Schema 2.1 adds Modified_Time (ISO-8601 UTC, microseconds) on every row and an Is_Empty_Dir
                  boolean: genuinely empty directories are captured as rows (no content, no hash).
                  Legacy snapshots (Is_Binary boolean, base64 in File_Content; 2.0 without the 2.1 fields) remain readable.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   19d2b773-34da-465b-9b72-b4168e56fb67
 """
@@ -40,14 +40,12 @@ from lib_bejson_Projects_logging import projects_logging_get_logger
 from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_name
 from lib_bejson_Projects_tracker import TrackerInfo
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 SNAPSHOT_RECORDS_TYPE = "SnapshotEntity"
 SNAPSHOT_SCHEMA_VERSION = "2.1"
 FLAG_IS_BINARY = "Is_Binary"
-DEFAULT_EXCLUDE_DIRS = (".git", "__pycache__", "node_modules", ".mfdb_lock", "images")
+DEFAULT_EXCLUDE_DIRS = (".git", "__pycache__", "node_modules", ".mfdb_lock")
 DEFAULT_MAX_FILE_BYTES = 25 * 1024 * 1024
-DEFAULT_MAX_IMAGE_BYTES = 30 * 1024
-IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".tiff", ".avif", ".svg"})
 SNAPSHOT_FIELDS = [
     {"name": "File_Name", "type": "string"},
     {"name": "File_Extension", "type": "string"},
@@ -174,8 +172,7 @@ def projects_snapshot_build_rows(target_dir: Path,
                                  skip_dirs: Iterable[Path] = (),
                                  max_file_bytes: int = DEFAULT_MAX_FILE_BYTES,
                                  binary_enabled: bool = True,
-                                 exclude_files: Iterable[str] = (),
-                                 max_image_bytes: int = DEFAULT_MAX_IMAGE_BYTES):
+                                 exclude_files: Iterable[str] = ()):
     target_dir = Path(target_dir).resolve()
     excluded_names = tuple(exclude_dirs)                     # names or fnmatch globs
     excluded_files = tuple(exclude_files)                    # file-name globs (a pattern with "/" matches the path)
@@ -217,9 +214,6 @@ def projects_snapshot_build_rows(target_dir: Path,
             try:
                 st = path.stat()
                 size = st.st_size
-                if max_image_bytes and path.suffix.lower() in IMAGE_EXTENSIONS and size > max_image_bytes:
-                    stats.excluded_files += 1
-                    continue
                 if max_file_bytes and size > max_file_bytes:
                     stats.skipped.append(f"{rel}: {size} bytes exceeds limit {max_file_bytes}")
                     continue

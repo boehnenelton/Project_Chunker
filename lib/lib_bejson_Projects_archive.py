@@ -8,7 +8,7 @@ Description:     Archive lifecycle on top of a snapshot: independent verificatio
                  Deletion is conservative: nothing is removed unless EVERY snapshot row matches its source
                  byte-for-byte, each file is re-hashed immediately before unlinking, only files that are in
                  the snapshot are touched, and dangerous targets are refused.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   e5580165-ec76-4023-9b01-b01bac518ddb
 """
@@ -31,7 +31,7 @@ from lib_bejson_Projects_snapshot import (
 )
 from lib_bejson_Projects_tracker import TRACKER_FILENAMES
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _log = projects_logging_get_logger("archive")
 
 

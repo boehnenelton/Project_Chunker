@@ -5,7 +5,7 @@ Relative Path:   Web/project_chunker_flask.py
 Description:     Launcher for the unified Project Chunker web app (dashboard, projects, one Chunk page for track/chunk/scoop/zip,
                  restore, migrator, verify, filters, jobs, settings).
                  Binds to localhost, picks the first free port from web_config.json port_start.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   2906be2f-a606-43ea-bb3d-ee890bf91853
 """
@@ -26,7 +26,7 @@ from chunker_web import create_app  # noqa: E402
 from lib_bejson_Projects_logging import projects_logging_configure, projects_logging_get_logger  # noqa: E402
 from lib_bejson_Projects_webconfig import projects_webconfig_ensure, projects_webconfig_load  # noqa: E402
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _log = projects_logging_get_logger("web.launcher")
 
 

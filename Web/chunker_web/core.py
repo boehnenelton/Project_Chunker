@@ -4,7 +4,7 @@ File Name:       core.py
 Relative Path:   Web/chunker_web/core.py
 Description:     Shared context for the unified Project Chunker web app: paths and config, picker-root confinement,
                  request parsing into chunker run options, preview->run plan coupling (plan_id), result serializers.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   0aa63618-ecf9-4db5-8092-5a3993cd8055
 """
@@ -31,7 +31,7 @@ from lib_bejson_Projects_pipeline import RunOptions
 from lib_bejson_Projects_tracker import IdentityOverride, ProjectsTrackerError
 from lib_bejson_Projects_webconfig import projects_webconfig_ensure, projects_webconfig_load
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 PLAN_TTL_SECONDS = 30 * 60
 DELETE_FILTERED_PHRASE = "DELETE FILTERED"
 ROOT_ENV_KEYS = ("INTERNAL_STORAGE", "SD_CARD", "ADMIN", "ADMIN_ROOT", "PROJECT_ROOT")

@@ -8,7 +8,7 @@ Description:     Edit tracker details for ALL versions of one project in a singl
                  changes all of them. Version numbers, Versioned_UUID and the global Project_GUID are never editable.
                  Renaming moves the tracker database and snapshot files. Writes are staged to temp files, committed by
                  rename, verified, and rolled back completely if anything fails. Locks: registry + tracker databases.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   c5dbf6d7-49ee-4324-8903-4aa2ff7fc83a
 """
@@ -35,7 +35,7 @@ from lib_bejson_Projects_paths import StorageLayout, projects_paths_sanitize_nam
 from lib_bejson_Projects_pipeline import _find_snapshot
 from lib_bejson_Projects_registry import projects_registry_list, projects_registry_now
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 TMP_SUFFIX, BAK_SUFFIX = ".edit-tmp", ".editbak"
 MAX_SNAPSHOT_REWRITE_BYTES = 256 * 1024 * 1024
 SHORT_LIMIT, LONG_LIMIT, NAME_LIMIT = 500, 4000, 100
@@ -265,13 +265,7 @@ def projects_edit_details(layout: StorageLayout, name: str) -> Dict[str, Any]:
     extras = [_field_card(k, k.replace("_", " "), "", False, "text",
                           {uid: _read_value(docs[uid], k, "") if uid in docs else "" for uid in order}, order)
               for k in sorted(extra_keys)]
-    project_guid = ""
-    for doc in docs.values():
-        pg = _read_value(doc, "Project_GUID", "Project_GUID")
-        if pg and pg != "GUID_PLACEHOLDER":
-            project_guid = pg
-            break
-    return {"name": name, "project_guid": project_guid, "versions": len(rows), "editable": editable, "extras": extras,
+    return {"name": name, "versions": len(rows), "editable": editable, "extras": extras,
             "missing_trackers": [u for u in order if u not in docs], "snapshot_limit_mb": MAX_SNAPSHOT_REWRITE_BYTES // (1024 * 1024)}
 
 

@@ -145,7 +145,6 @@
     }
     bar.appendChild(h("span", { "class": P + "active__label", text: "Active project" }));
     bar.appendChild(h("strong", { "class": P + "active__name", text: a.name }));
-    if (a.Project_GUID) { bar.appendChild(pill("GUID " + a.Project_GUID.slice(0, 8), "muted")); }
     bar.appendChild(pill(a.latest.Version_Label, "muted")); bar.appendChild(pill(a.latest.Status, kindOf(a.latest.Status)));
     bar.appendChild(h("a", { "class": P + "active__link", href: "/projects", text: "Change" }));
     bar.appendChild(btn("Clear", function () { clearActive().catch(function (e) { toast(e.message, true); }); }));
@@ -569,7 +568,15 @@
     var wanted = new URLSearchParams(location.search).get("open");
     if (wanted) open[wanted] = true;
     function saveOpen() { try { sessionStorage.setItem(KEY, JSON.stringify(open)); } catch (e) { /* private mode */ } }
-    var search = h("input", { type: "search", "class": P + "input", placeholder: "filter by project name", "aria-label": "Filter projects" });
+    var search = h("input", { type: "search", id: "projectSearch", "class": P + "input", placeholder: "filter by project name", "aria-label": "Filter projects" });
+    var typeSelect = select([["", "All Types"]], "");
+    typeSelect.id = "typeFilter";
+    typeSelect.setAttribute("aria-label", "Filter projects by type");
+    var statusSelect = select([["", "All Statuses"]], "");
+    statusSelect.id = "statusFilter";
+    statusSelect.setAttribute("aria-label", "Filter projects by status");
+    var wantedType = new URLSearchParams(location.search).get("type");
+    var wantedStatus = new URLSearchParams(location.search).get("status");
     var list = h("div"), detail = h("div"), counter = muted(""), lastProjects = [];
     var expandBtn = btn("Expand all", function () { setAll(true); }), collapseBtn = btn("Collapse all", function () { setAll(false); });
 
@@ -583,8 +590,21 @@
     }
     function setAll(on) { order.forEach(function (n) { if (!cards[n].el.hidden) setOpen(n, on); }); }
     function applyFilter() {
-      var q = search.value.toLowerCase().trim(), shown = 0;
-      order.forEach(function (n) { var m = !q || n.toLowerCase().indexOf(q) >= 0; cards[n].el.hidden = !m; if (m) shown++; });
+      var q = search.value.toLowerCase().trim();
+      var selType = typeSelect.value.toLowerCase().trim();
+      var selStatus = statusSelect.value.toLowerCase().trim();
+      var shown = 0;
+      order.forEach(function (n) {
+        var c = cards[n];
+        var nameMatch = !q || n.toLowerCase().indexOf(q) >= 0;
+        var pType = (c.p.type || c.p.latest_type || (c.p.versions && c.p.versions[0] && c.p.versions[0].Type) || "").toLowerCase().trim();
+        var pStatus = (c.p.latest_status || (c.p.versions && c.p.versions[0] && c.p.versions[0].Status) || "").toLowerCase().trim();
+        var typeMatch = !selType || (selType === "__none__" ? !pType : pType === selType);
+        var statusMatch = !selStatus || (pStatus === selStatus);
+        var m = nameMatch && typeMatch && statusMatch;
+        c.el.hidden = !m;
+        if (m) shown++;
+      });
       counter.textContent = order.length ? shown + " of " + order.length + " project(s)" : "";
     }
 
@@ -592,13 +612,14 @@
       var id = "acc-" + idx + "-" + Date.now().toString(36);
       var chev = h("span", { "class": P + "acc__chev", "aria-hidden": "true", text: "+" });
       var latest = p.versions[0] || {};
-      var metaChildren = [pill(p.version_count + " version(s)")];
-      if (p.Project_GUID) metaChildren.push(pill("GUID " + p.Project_GUID.slice(0, 8), "muted"));
-      metaChildren.push(pill(latest.Version_Label || "", ""));
-      metaChildren.push(pill(p.latest_status, kindOf(p.latest_status)));
+      var pType = (p.type || p.latest_type || latest.Type || "").trim();
       var head = h("button", { type: "button", id: id + "-h", "class": P + "acc__head", "aria-expanded": "false", "aria-controls": id },
         h("span", { "class": P + "acc__title", text: p.name }),
-        h("span", { "class": P + "acc__meta" }, metaChildren), chev);
+        h("span", { "class": P + "acc__meta" },
+          pType ? pill(pType) : null,
+          pill(p.version_count + " version(s)"),
+          pill(latest.Version_Label || "", ""),
+          pill(p.latest_status, kindOf(p.latest_status))), chev);
       var body = h("div", { id: id, "class": P + "acc__body", role: "region", "aria-labelledby": id + "-h", hidden: true });
       // the active-project control sits outside the (button) header so it can be used with the card collapsed
       var activeBtn = btn("Make active", function () {
@@ -622,18 +643,14 @@
         if (v.Status === "tracked") tracked++; else if (v.Status === "chunked") chunked++; else if (v.Status === "archived") archived++;
         if (v.snapshot_state === "ok") bytesTotal += v.snapshot_bytes;
       });
-      var statItems = [["versions", vs.length], ["tracked", tracked], ["chunked", chunked], ["archived", archived], ["snapshots", bytes(bytesTotal)]];
-      if (p.Project_GUID) {
-        statItems.unshift(["project guid", p.Project_GUID.slice(0, 8) + "…"]);
-      }
-      c.body.appendChild(stats(statItems));
+      c.body.appendChild(stats([["versions", vs.length], ["tracked", tracked], ["chunked", chunked], ["archived", archived], ["snapshots", bytes(bytesTotal)]]));
       c.body.appendChild(h("div", { "class": P + "subtitle", text: "Versions" }));
       vs.forEach(function (v) {
         var facts = v.snapshot_state === "ok" ? v.files + " files, " + v.empty_dirs + " empty dirs, " + bytes(v.snapshot_bytes) + " · " + (v.snapshot_date || "") : "snapshot " + v.snapshot_state;
         c.body.appendChild(h("div", { "class": P + "row" }, h("div", { "class": P + "row__info" },
           h("span", { "class": P + "row__label" }, v.Version_Label + "  ", pill(v.Status, kindOf(v.Status))),
           h("span", { "class": P + "row__desc", text: facts }),
-          h("span", { "class": P + "row__desc", text: (v.Project_GUID ? "guid " + v.Project_GUID.slice(0, 8) + " · " : "") + "version " + v.Versioned_UUID.slice(0, 8) + (v.Original_Path ? " · source " + v.Original_Path : "") + (v.Updated_At ? " · updated " + v.Updated_At : "") })),
+          h("span", { "class": P + "row__desc", text: "id " + v.Versioned_UUID.slice(0, 8) + (v.Original_Path ? " · source " + v.Original_Path : "") + (v.Updated_At ? " · updated " + v.Updated_At : "") })),
           h("div", { "class": P + "actions" },
             btn("Files", function () { showFiles(p.name, v); }), btn("Export zip", function () { exportZip(v); }),
             h("a", { "class": P + "btn", href: "/restore?v=" + encodeURIComponent(v.Versioned_UUID), text: "Restore" }))));
@@ -652,12 +669,6 @@
     function buildEditor(c, d, box) {
       var nVer = c.p.versions.length, items = [], reviewBox = h("div"), jobBox = h("div", { hidden: true }), busy = false, plan = null;
       var summary = muted(""), reviewBtn = btn("Review changes", review, "primary"), applyBtn = btn("", apply, "primary");
-      if (d.project_guid) {
-        box.appendChild(h("div", { style: "display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding: 6px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;" },
-          h("span", { style: "font-size: 0.85em; opacity: 0.7;", text: "Project GUID:" }),
-          h("code", { style: "font-family: monospace; color: var(--accent, #DE2626);", text: d.project_guid })
-        ));
-      }
       var snaps = check("Also update the tracker copy stored inside each snapshot (Restore writes it back out; rewrites snapshot files)", true, invalidate);
       var nameWarn = banner("Renaming moves this project's tracker database and snapshot files and rewrites every snapshot header. It cannot be undone from here (a backup of the registry and tracker database is kept).");
       nameWarn.hidden = true;
@@ -746,7 +757,7 @@
       Promise.all([api("/api/projects"), loadActive()]).then(function (rs) { return rs[0]; }).then(function (r) {   // a rename keeps the project active
         delete cards[oldName]; delete cards[newName];            // rebuilt from fresh data; other projects keep their open editors
         if (oldName !== newName) { delete open[oldName]; }
-        open[newName] = true; saveOpen(); sync(r.projects);
+        open[newName] = true; saveOpen(); sync(r.projects, r.types);
         clear(detail).appendChild(msg);
         if (cards[newName]) cards[newName].el.scrollIntoView({ behavior: "smooth", block: "start" });
       }).catch(function (e) { toast(e.message, true); });
@@ -779,9 +790,55 @@
       detail.scrollIntoView({ behavior: "smooth" });
     }
 
+    function updateFilterOptions(projects, serverTypes, serverStatuses) {
+      var currentVal = typeSelect.value || (wantedType ? wantedType.toLowerCase().trim() : "");
+      var currentStatus = statusSelect.value || (wantedStatus ? wantedStatus.toLowerCase().trim() : "");
+      var typesMap = {}, statusesMap = {};
+      var hasUntagged = false;
+      if (Array.isArray(serverTypes)) {
+        serverTypes.forEach(function (t) { if (t && t.trim()) typesMap[t.trim().toLowerCase()] = t.trim(); });
+      }
+      if (Array.isArray(serverStatuses)) {
+        serverStatuses.forEach(function (s) { if (s && s.trim()) statusesMap[s.trim().toLowerCase()] = s.trim(); });
+      }
+      projects.forEach(function (p) {
+        var t = (p.type || p.latest_type || (p.versions && p.versions[0] && p.versions[0].Type) || "").trim();
+        if (t) { typesMap[t.toLowerCase()] = t; } else { hasUntagged = true; }
+        var s = (p.latest_status || (p.versions && p.versions[0] && p.versions[0].Status) || "").trim();
+        if (s) { statusesMap[s.toLowerCase()] = s; }
+      });
+      clear(typeSelect);
+      typeSelect.appendChild(h("option", { value: "", text: "All Types" }));
+      Object.keys(typesMap).sort().forEach(function (k) {
+        typeSelect.appendChild(h("option", { value: k, text: typesMap[k] }));
+      });
+      if (hasUntagged) {
+        typeSelect.appendChild(h("option", { value: "__none__", text: "(no type / untagged)" }));
+      }
+      if (currentVal) {
+        typeSelect.value = currentVal;
+      }
+      if (typeSelect.selectedIndex < 0) {
+        typeSelect.value = "";
+      }
+
+      clear(statusSelect);
+      statusSelect.appendChild(h("option", { value: "", text: "All Statuses" }));
+      Object.keys(statusesMap).sort().forEach(function (k) {
+        statusSelect.appendChild(h("option", { value: k, text: statusesMap[k] }));
+      });
+      if (currentStatus) {
+        statusSelect.value = currentStatus;
+      }
+      if (statusSelect.selectedIndex < 0) {
+        statusSelect.value = "";
+      }
+    }
+
     // Rebuilds only cards whose data are new; existing cards (and any unsaved edits in them) are reused.
-    function sync(projects) {
+    function sync(projects, serverTypes, serverStatuses) {
       lastProjects = projects;
+      updateFilterOptions(projects, serverTypes, serverStatuses);
       var next = {}; order = [];
       var act = ACTIVE.info && ACTIVE.info.name;
       projects = projects.slice().sort(function (a, b) { return (b.name === act) - (a.name === act); });       // the active project is pinned first
@@ -808,11 +865,15 @@
     }
 
     search.addEventListener("input", applyFilter);
+    typeSelect.addEventListener("change", applyFilter);
+    statusSelect.addEventListener("change", applyFilter);
     root.appendChild(field("Search", search));
+    root.appendChild(field("Type", typeSelect));
+    root.appendChild(field("Status", statusSelect));
     root.appendChild(h("div", { "class": P + "actions" }, expandBtn, collapseBtn));
     root.appendChild(counter); root.appendChild(list); root.appendChild(detail);
     Promise.all([api("/api/projects"), ACTIVE.ready]).then(function (rs) {
-      sync(rs[0].projects);
+      sync(rs[0].projects, rs[0].types, rs[0].statuses);
       if (ACTIVE.info && !open[ACTIVE.info.name]) setOpen(ACTIVE.info.name, true);        // show the active project's details
     }).catch(function (e) { toast(e.message, true); });
     ACTIVE.listeners.push(function () { if (lastProjects.length) sync(lastProjects); });

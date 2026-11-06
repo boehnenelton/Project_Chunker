@@ -3,7 +3,7 @@
 File Name:       pages.py
 Relative Path:   Web/chunker_web/pages.py
 Description:     Page routes and the sidebar section map of the unified web app (one Chunk page covers track/chunk/scoop/zip).
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   718f0577-2008-4c51-8d24-78afe3155d22
 """
@@ -12,7 +12,7 @@ from flask import redirect, render_template, url_for
 
 from .core import Ctx
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 # (group, [(key, label, href, enabled)])
 SECTIONS = (
     ("Overview", (("dashboard", "Dashboard", "/", True), ("projects", "Projects", "/projects", True))),

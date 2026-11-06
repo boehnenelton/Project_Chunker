@@ -7,7 +7,7 @@ Description:     The persistent "active project" of the web UI. One project is c
                  targets it by default: Chunk (its source folder), Restore (its versions), Verify (scope), Tracker.
                  The registry stays the source of truth: if the active project no longer exists it is cleared and the
                  UI is told. The routes are GET /api/active, POST /api/active {name}, DELETE /api/active.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   0d7a2f5c-91b4-4c6e-a3f8-5b1e8c4d9a26
 """
@@ -24,7 +24,7 @@ from lib_bejson_Projects_view import projects_view_build
 
 from .core import ApiError, Ctx
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _log = projects_logging_get_logger("web.active")
 
 
@@ -55,12 +55,10 @@ def active_resolve(ctx: Ctx, projects: Optional[List[Dict[str, Any]]] = None) ->
     latest = project["versions"][0]
     source = _source_folder(ctx, project)
     return {"active": {
-        "name": name, "Project_GUID": project.get("Project_GUID", ""),
-        "version_count": project["version_count"], "latest_status": project["latest_status"],
+        "name": name, "version_count": project["version_count"], "latest_status": project["latest_status"],
         "latest": {"Versioned_UUID": latest["Versioned_UUID"], "Version_Label": latest["Version_Label"],
-                   "Status": latest["Status"], "Project_GUID": latest.get("Project_GUID", "")},
-        "versions": [{"Versioned_UUID": c["Versioned_UUID"], "Version_Label": c["Version_Label"], "Status": c["Status"],
-                      "Project_GUID": c.get("Project_GUID", "")}
+                   "Status": latest["Status"]},
+        "versions": [{"Versioned_UUID": c["Versioned_UUID"], "Version_Label": c["Version_Label"], "Status": c["Status"]}
                      for c in project["versions"]],
         "source_path": source, "source_exists": source is not None}, "was": None}
 

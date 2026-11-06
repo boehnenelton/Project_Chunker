@@ -7,7 +7,7 @@ Description:     Path lock for the Projects family: a process-wide per-path thre
                  race inside its stale-lock reclaim (observed as an intermittent FileNotFoundError while writing
                  lock_meta.json). Core is frozen, so threads are serialised here and the PID lock still guards
                  other processes.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   4f394ad0-dd12-4298-ad37-23737e12379f
 """
@@ -18,7 +18,7 @@ from typing import Dict, Union
 
 from lib_bejson_Core_bejson_core import ResilientPIDLock
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _registry_guard = threading.Lock()
 _thread_locks: Dict[str, threading.Lock] = {}
 

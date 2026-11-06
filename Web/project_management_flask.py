@@ -5,7 +5,7 @@ Relative Path:   Web/project_management_flask.py
 Description:     Project_Management: read-only Flask viewer for the chunker registry. Each project is a collapsible
                  list item; expanding it shows one card per registered version. Logic lives in
                  lib_bejson_Projects_view; this file only serves it.
-VERSION:         1.8.0
+VERSION:         1.9.0
 Author:          Elton Boehnen · boehnenelton2024@gmail.com · boehnenelton2024.pages.dev · github.com/boehnenelton
 RELATIONAL_ID:   f15005e7-ffb1-439f-8a04-f89a6f0301fb
 """
@@ -20,13 +20,13 @@ LIB_DIR = PROJECT_ROOT / "lib"
 if str(LIB_DIR) not in sys.path:
     sys.path.insert(0, str(LIB_DIR))
 
-from flask import Flask, jsonify, render_template_string  # noqa: E402
+from flask import Flask, jsonify, render_template_string, request  # noqa: E402
 
 from lib_bejson_Projects_logging import projects_logging_configure, projects_logging_get_logger  # noqa: E402
 from lib_bejson_Projects_paths import projects_paths_resolve_storage_layout  # noqa: E402
 from lib_bejson_Projects_view import projects_view_build  # noqa: E402
 
-VERSION = "1.8.0"
+VERSION = "1.9.0"
 _log = projects_logging_get_logger("web")
 
 PAGE = """<!doctype html>
@@ -37,6 +37,11 @@ PAGE = """<!doctype html>
 @media (prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff}}
 body{background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif;margin:0;padding:16px;max-width:900px;margin-inline:auto}
 h1{margin:0 0 4px}.sub{opacity:.7;margin-bottom:16px}
+.filter-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:12px 0 16px;font-size:.9rem}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-bar select{padding:6px 10px;border:1px solid var(--fg);background:var(--bg);color:var(--fg);font:inherit}
+.filter-bar a{color:var(--accent);text-decoration:none;font-size:.85rem}
+.filter-count{font-size:.85rem;opacity:.8;margin-left:auto}
 details.project{border:2px solid var(--fg);margin:8px 0}
 details.project>summary{cursor:pointer;padding:10px 12px;font-weight:700;list-style:none;display:flex;gap:10px;align-items:center}
 details.project>summary::-webkit-details-marker{display:none}
@@ -53,15 +58,36 @@ dl{margin:6px 0 0;font-size:.85rem}dt{opacity:.7}dd{margin:0 0 4px}
 footer{margin-top:24px;font-size:.8rem;opacity:.7}footer a{color:var(--accent)}
 </style></head><body>
 <h1>Project Management</h1>
-<div class="sub">{{ projects|length }} project(s) &middot; read-only &middot; {{ total }} version(s)</div>
+<div class="sub" id="summarySub"><span id="filterCount">{{ projects|length }}</span> of {{ all_count }} project(s) &middot; read-only &middot; {{ total }} version(s)</div>
+<form method="get" action="/" class="filter-bar" id="filterForm">
+  <div class="filter-group">
+    <label for="typeFilter" style="font-weight: 600;">Type:</label>
+    <select id="typeFilter" name="type">
+      <option value="">All Types</option>
+      {% for t in types %}
+      <option value="{{ t }}"{% if selected_type.lower() == t.lower() %} selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filter-group">
+    <label for="statusFilter" style="font-weight: 600;">Status:</label>
+    <select id="statusFilter" name="status">
+      <option value="">All Statuses</option>
+      {% for s in statuses %}
+      <option value="{{ s }}"{% if selected_status.lower() == s.lower() %} selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% if selected_type or selected_status %}<a href="/">Clear filters</a>{% endif %}
+</form>
+<div id="projectsList">
 {% for p in projects %}
-<details class="project"><summary><span>{{ p.name }}</span><span class="st">{{ p.latest_status }}</span>
+<details class="project"><summary data-type="{{ p.type or '' }}" data-status="{{ p.latest_status or '' }}"><span>{{ p.name }}</span><span class="st">{{ p.latest_status }}</span>{% if p.type %}<span class="st">{{ p.type }}</span>{% endif %}
 <span class="count">{{ p.version_count }} version{{ '' if p.version_count == 1 else 's' }}</span></summary>
 <div class="cards">
 {% for v in p.versions %}
-<div class="card"><h3>{{ v.Version_Label }} <span class="st">{{ v.Status }}</span></h3>
-<dl>{% if p.Project_GUID or v.Project_GUID %}<dt>Project GUID</dt><dd>{{ p.Project_GUID or v.Project_GUID }}</dd>{% endif %}
-<dt>Versioned UUID</dt><dd>{{ v.Versioned_UUID }}</dd>
+<div class="card"><h3>{{ v.Version_Label }} <span class="st">{{ v.Status }}</span>{% if v.Type %}<span class="st">{{ v.Type }}</span>{% endif %}</h3>
+<dl><dt>UUID</dt><dd>{{ v.Versioned_UUID }}</dd>
 <dt>Original location</dt><dd>{{ v.Original_Path or '-' }}</dd>
 <dt>Snapshot</dt><dd>{% if v.snapshot_state == 'ok' %}{{ v.snapshot_name }} &middot; {{ v.files }} file(s) &middot; {{ v.snapshot_bytes }} bytes{% else %}{{ v.snapshot_state }}{% endif %}</dd>
 {% if v.snapshot_state == 'ok' %}<dt>Snapshot date</dt><dd>{{ v.snapshot_date or '-' }}</dd>
@@ -70,8 +96,36 @@ footer{margin-top:24px;font-size:.8rem;opacity:.7}footer a{color:var(--accent)}
 {% endfor %}
 </div></details>
 {% else %}<div class="empty">No projects registered. Run the chunker with --track.</div>{% endfor %}
+</div>
 <footer>Elton Boehnen &middot; boehnenelton2024@gmail.com &middot; boehnenelton2024.pages.dev &middot;
 <a href="https://github.com/boehnenelton">github.com/boehnenelton</a></footer>
+<script>
+(function() {
+  var typeSel = document.getElementById("typeFilter");
+  var statusSel = document.getElementById("statusFilter");
+  var list = document.getElementById("projectsList");
+  var countEl = document.getElementById("filterCount");
+  function applyClientFilters() {
+    var selType = typeSel.value.toLowerCase().trim();
+    var selStatus = statusSel.value.toLowerCase().trim();
+    var items = list.querySelectorAll("details.project");
+    var shown = 0;
+    items.forEach(function(el) {
+      var sum = el.querySelector("summary");
+      var pType = ((sum && sum.getAttribute("data-type")) || "").toLowerCase().trim();
+      var pStatus = ((sum && sum.getAttribute("data-status")) || "").toLowerCase().trim();
+      var typeMatch = !selType || (selType === "__none__" ? !pType : pType === selType);
+      var statusMatch = !selStatus || (pStatus === selStatus);
+      var match = typeMatch && statusMatch;
+      el.style.display = match ? "" : "none";
+      if (match) shown++;
+    });
+    if (countEl) countEl.textContent = shown;
+  }
+  typeSel.addEventListener("change", applyClientFilters);
+  statusSel.addEventListener("change", applyClientFilters);
+})();
+</script>
 </body></html>"""
 
 
@@ -81,12 +135,42 @@ def create_app(storage_root=None) -> Flask:
 
     @app.get("/")
     def index():
-        projects = projects_view_build(layout)
-        return render_template_string(PAGE, projects=projects, total=sum(p["version_count"] for p in projects))
+        all_projects = projects_view_build(layout)
+        types = sorted({p.get("type", "") for p in all_projects if p.get("type")}, key=str.lower)
+        statuses = sorted({p.get("latest_status", "") for p in all_projects if p.get("latest_status")}, key=str.lower)
+        type_filter = request.args.get("type", "").strip()
+        status_filter = request.args.get("status", "").strip()
+        selected_type = type_filter
+        selected_status = status_filter
+        projects = all_projects
+        if type_filter:
+            if type_filter in ("__none__", "none", "untagged"):
+                projects = [p for p in projects if not (p.get("type") or "").strip()]
+            else:
+                projects = [p for p in projects if (p.get("type") or "").lower() == type_filter.lower()]
+        if status_filter:
+            projects = [p for p in projects if (p.get("latest_status") or "").lower() == status_filter.lower()]
+        return render_template_string(PAGE, projects=projects, all_count=len(all_projects),
+                                      total=sum(p["version_count"] for p in projects),
+                                      types=types, statuses=statuses,
+                                      selected_type=selected_type, selected_status=selected_status)
 
     @app.get("/api/projects")
     def api_projects():
-        return jsonify(projects_view_build(layout))
+        all_projects = projects_view_build(layout)
+        type_filter = request.args.get("type", "").strip()
+        status_filter = request.args.get("status", "").strip()
+        projects = all_projects
+        if type_filter:
+            if type_filter in ("__none__", "none", "untagged"):
+                projects = [p for p in projects if not (p.get("type") or "").strip()]
+            else:
+                projects = [p for p in projects if (p.get("type") or "").lower() == type_filter.lower()]
+        if status_filter:
+            projects = [p for p in projects if (p.get("latest_status") or "").lower() == status_filter.lower()]
+        return jsonify(projects)
+
+    return app
 
     return app
 
